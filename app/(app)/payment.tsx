@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useStripe, useConfirmPayment } from '@stripe/stripe-react-native';
+import { useStripe, useConfirmPayment, usePaymentSheet } from '@stripe/stripe-react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { PaymentService } from '@/services/paymentService';
 import { PaymentMethod } from '@/types/payment';
@@ -9,6 +9,7 @@ import { ArrowLeftIcon } from 'react-native-heroicons/solid';
 
 export default function PaymentScreen() {
   const { confirmPayment, loading } = useConfirmPayment();
+  const { initPaymentSheet, presentPaymentSheet } = usePaymentSheet();
   const { clientSecret, paymentId, amount, mediaId } = useLocalSearchParams<{
     clientSecret: string;
     paymentId: string;
@@ -19,6 +20,33 @@ export default function PaymentScreen() {
   const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
+  const [showCardForm, setShowCardForm] = useState(false);
+
+  // Initialize payment sheet for card payments
+  useEffect(() => {
+    if (clientSecret) {
+      initializePaymentSheet();
+    }
+  }, [clientSecret]);
+
+  const initializePaymentSheet = async () => {
+    try {
+      const { error } = await initPaymentSheet({
+        merchantDisplayName: 'Zivo',
+        paymentIntentClientSecret: clientSecret,
+        defaultBillingDetails: {
+          email: user?.email,
+          name: user?.name,
+        },
+      });
+
+      if (error) {
+        console.error('Payment sheet init error:', error);
+      }
+    } catch (error) {
+      console.error('Failed to initialize payment sheet:', error);
+    }
+  };
 
   const handlePayment = async (paymentMethod: PaymentMethod) => {
     if (!clientSecret) {
@@ -30,10 +58,16 @@ export default function PaymentScreen() {
     setSelectedMethod(paymentMethod);
 
     try {
-      // Map custom PaymentMethod to Stripe payment method type
-      const stripePaymentMethodType = paymentMethod === 'Card' ? 'Card' : 
-                                    paymentMethod === 'ApplePay' ? 'ApplePay' : 
-                                    paymentMethod === 'GooglePay' ? 'GooglePay' : 'Card';
+      if (paymentMethod === 'Card') {
+        // For card payments, use the payment sheet
+        setShowCardForm(true);
+        setIsProcessing(false);
+        setSelectedMethod(null);
+        return;
+      }
+
+      // For Apple Pay and Google Pay
+      const stripePaymentMethodType = paymentMethod === 'ApplePay' ? 'ApplePay' : 'GooglePay';
 
       const { error, paymentIntent } = await confirmPayment(clientSecret, {
         paymentMethodType: stripePaymentMethodType as any,
@@ -48,23 +82,7 @@ export default function PaymentScreen() {
       if (error) {
         Alert.alert('Payment Failed', error.message);
       } else if (paymentIntent) {
-        // Poll for payment status
-        try {
-          const status = await PaymentService.pollPaymentStatus(paymentId);
-          
-          if (status.status === 'succeeded') {
-            Alert.alert(
-              'Payment Successful',
-              'Your media has been uploaded successfully!',
-              [{ text: 'OK', onPress: () => router.replace('/(app)/home') }]
-            );
-          } else {
-            Alert.alert('Payment Failed', status.failure_reason || 'Payment was not completed');
-          }
-        } catch (pollError) {
-          console.error('Payment status polling failed:', pollError);
-          Alert.alert('Payment Status', 'Payment completed but status verification failed. Please check your payment history.');
-        }
+        await handlePaymentSuccess();
       }
     } catch (error: any) {
       console.error('Payment error:', error);
@@ -75,10 +93,89 @@ export default function PaymentScreen() {
     }
   };
 
+  const handleCardPayment = async () => {
+    if (!clientSecret) {
+      Alert.alert('Error', 'Payment intent not found');
+      return;
+    }
+
+    console.log('Starting card payment with payment sheet...');
+    setIsProcessing(true);
+
+    try {
+      const { error } = await presentPaymentSheet();
+
+      if (error) {
+        console.error('Payment sheet error:', error);
+        Alert.alert('Payment Failed', error.message);
+      } else {
+        // Payment was successful
+        await handlePaymentSuccess();
+      }
+    } catch (error: any) {
+      console.error('Card payment error:', error);
+      Alert.alert('Error', 'Card payment failed. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePaymentSuccess = async () => {
+    try {
+      const status = await PaymentService.pollPaymentStatus(paymentId);
+      
+      if (status.status === 'succeeded') {
+        Alert.alert(
+          'Payment Successful',
+          'Your media has been uploaded successfully!',
+          [{ text: 'OK', onPress: () => router.replace('/(app)/home') }]
+        );
+      } else {
+        Alert.alert('Payment Failed', status.failure_reason || 'Payment was not completed');
+      }
+    } catch (pollError) {
+      console.error('Payment status polling failed:', pollError);
+      Alert.alert('Payment Status', 'Payment completed but status verification failed. Please check your payment history.');
+    }
+  };
+
   const formatAmount = (amount: string) => {
     const numAmount = parseFloat(amount);
     return `$${(numAmount / 100).toFixed(2)}`;
   };
+
+  const renderCardForm = () => (
+    <View className="bg-gray-800 rounded-lg p-6 mb-6">
+      <Text className="text-white text-lg font-bold mb-4">Card Payment</Text>
+      <Text className="text-gray-300 mb-4">
+        Click the button below to open Stripe's secure payment form where you can enter your card details.
+      </Text>
+      
+      <TouchableOpacity
+        onPress={handleCardPayment}
+        disabled={isProcessing}
+        className="bg-yellow-400 rounded-lg p-4 mt-4 items-center"
+        activeOpacity={0.7}
+      >
+        {isProcessing ? (
+          <ActivityIndicator color="#000000" />
+        ) : (
+          <Text className="text-black font-bold text-lg">
+            Enter Card Details
+          </Text>
+        )}
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => setShowCardForm(false)}
+        disabled={isProcessing}
+        className="bg-gray-600 rounded-lg p-4 mt-2 items-center"
+        activeOpacity={0.7}
+      >
+        <Text className="text-white font-semibold">Cancel</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <View className="flex-1 bg-black">
@@ -103,55 +200,62 @@ export default function PaymentScreen() {
           </View>
         </View>
 
+        {/* Card Form */}
+        {showCardForm && renderCardForm()}
+
         {/* Payment Methods */}
-        <Text className="text-white text-lg font-bold mb-4">Choose Payment Method</Text>
+        {!showCardForm && (
+          <>
+            <Text className="text-white text-lg font-bold mb-4">Choose Payment Method</Text>
 
-        {/* Apple Pay */}
-        <TouchableOpacity
-          onPress={() => handlePayment('ApplePay')}
-          disabled={loading || isProcessing}
-          className="bg-black border border-gray-600 rounded-lg p-4 mb-4 items-center"
-          activeOpacity={0.7}
-        >
-          {isProcessing && selectedMethod === 'ApplePay' ? (
-            <ActivityIndicator color="#FFFF00" />
-          ) : (
-            <Text className="text-white font-semibold">Apple Pay</Text>
-          )}
-        </TouchableOpacity>
+            {/* Apple Pay */}
+            <TouchableOpacity
+              onPress={() => handlePayment('ApplePay')}
+              disabled={loading || isProcessing}
+              className="bg-black border border-gray-600 rounded-lg p-4 mb-4 items-center"
+              activeOpacity={0.7}
+            >
+              {isProcessing && selectedMethod === 'ApplePay' ? (
+                <ActivityIndicator color="#FFFF00" />
+              ) : (
+                <Text className="text-white font-semibold">Apple Pay</Text>
+              )}
+            </TouchableOpacity>
 
-        {/* Google Pay */}
-        <TouchableOpacity
-          onPress={() => handlePayment('GooglePay')}
-          disabled={loading || isProcessing}
-          className="bg-black border border-gray-600 rounded-lg p-4 mb-4 items-center"
-          activeOpacity={0.7}
-        >
-          {isProcessing && selectedMethod === 'GooglePay' ? (
-            <ActivityIndicator color="#FFFF00" />
-          ) : (
-            <Text className="text-white font-semibold">Google Pay</Text>
-          )}
-        </TouchableOpacity>
+            {/* Google Pay */}
+            <TouchableOpacity
+              onPress={() => handlePayment('GooglePay')}
+              disabled={loading || isProcessing}
+              className="bg-black border border-gray-600 rounded-lg p-4 mb-4 items-center"
+              activeOpacity={0.7}
+            >
+              {isProcessing && selectedMethod === 'GooglePay' ? (
+                <ActivityIndicator color="#FFFF00" />
+              ) : (
+                <Text className="text-white font-semibold">Google Pay</Text>
+              )}
+            </TouchableOpacity>
 
-        {/* Card Payment */}
-        <TouchableOpacity
-          onPress={() => handlePayment('Card')}
-          disabled={loading || isProcessing}
-          className="bg-yellow-400 rounded-lg p-4 items-center"
-          activeOpacity={0.7}
-        >
-          {isProcessing && selectedMethod === 'Card' ? (
-            <ActivityIndicator color="#000000" />
-          ) : (
-            <Text className="text-black font-bold text-lg">
-              Pay with Card
-            </Text>
-          )}
-        </TouchableOpacity>
+            {/* Card Payment */}
+            <TouchableOpacity
+              onPress={() => handlePayment('Card')}
+              disabled={loading || isProcessing}
+              className="bg-yellow-400 rounded-lg p-4 items-center"
+              activeOpacity={0.7}
+            >
+              {isProcessing && selectedMethod === 'Card' ? (
+                <ActivityIndicator color="#000000" />
+              ) : (
+                <Text className="text-black font-bold text-lg">
+                  Pay with Card
+                </Text>
+              )}
+            </TouchableOpacity>
+          </>
+        )}
 
         {/* Processing Indicator */}
-        {isProcessing && (
+        {isProcessing && !showCardForm && (
           <View className="mt-6 items-center">
             <ActivityIndicator size="large" color="#FFFF00" />
             <Text className="text-white mt-2">Processing payment...</Text>
