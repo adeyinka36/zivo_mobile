@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { View, Text, FlatList, Image, TextInput, ActivityIndicator, Dimensions, TouchableOpacity, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MagnifyingGlassIcon, EyeIcon, InformationCircleIcon, CheckCircleIcon } from 'react-native-heroicons/solid';
@@ -135,50 +135,55 @@ export default function ExploreScreen() {
     return description.substring(0, 25) + '...';
   };
 
-  // Optimized video player component with viewport detection
-  const MediaPlayer = ({ media, index }: { media: Media; index: number }) => {
-    const isVisible = index === visibleIndex;
-    const [isLoaded, setIsLoaded] = useState(false);
-
-    const { player, isReady } = useOptimizedVideoPlayer({
+  // Simple video player that only renders for the visible item
+  const VideoPlayer = useCallback(({ media }: { media: Media }) => {
+    const { player } = useOptimizedVideoPlayer({
       url: media.url,
-      shouldPlay: isVisible && isLoaded,
+      shouldPlay: true, // Always play when rendered
       loop: true,
       muted: true,
-      onReady: () => setIsLoaded(true),
     });
 
-    if (media.media_type === 'video') {
-      return (
-        <VideoView
-          style={{
-            width: '100%',
-            height: '100%',
-            borderRadius: 12,
-          }}
-          player={player}
-          contentFit="cover"
-        />
-      );
+    return (
+      <VideoView
+        style={{
+          width: '100%',
+          height: '100%',
+          borderRadius: 0,
+        }}
+        player={player}
+        contentFit="cover"
+      />
+    );
+  }, []);
+
+  // Optimized media player component
+  const MediaPlayer = useCallback(({ media, index }: { media: Media; index: number }) => {
+    const isVisible = index === visibleIndex;
+    
+    // Only render video for the currently visible item
+    if (media.media_type === 'video' && isVisible) {
+      return <VideoPlayer media={media} />;
     }
 
+    // Show thumbnail for videos when not visible, or actual image for images
     return (
       <Image
         source={{ uri: media.thumbnail || media.url }}
-        className="w-full h-full rounded-xl"
+        className="w-full h-full"
+        style={{ borderRadius: 0 }}
         resizeMode="cover"
-        onLoad={() => setIsLoaded(true)}
       />
     );
-  };
+  }, [visibleIndex, VideoPlayer]);
 
-  const renderMediaItem = ({ item, index }: { item: Media; index: number }) => (
-    <View className="px-4" style={{ height: hp('100%') }}>
-      {/* Media Container - 65% of screen height, starts below search */}
-      <View className="relative mb-3" style={{ height: hp('65%') }}>
+  const renderMediaItem = useCallback(({ item, index }: { item: Media; index: number }) => (
+    <View className="flex-1" style={{ height: Dimensions.get('window').height - 80 }}>
+      {/* Media Container - Reduced height to make room for info */}
+      <View className="relative" style={{ height: (Dimensions.get('window').height - 80) * 0.75 }}>
         <MediaPlayer media={item} index={index} />
         
-        {/* Eye Icon Overlay */}
+        {/* Eye Icon Overlay - Centered */}
         <TouchableOpacity 
           onPress={() => handleEyePress(item)}
           className="absolute inset-0 justify-center items-center"
@@ -191,15 +196,15 @@ export default function ExploreScreen() {
 
         {/* Watch Status Indicator */}
         {item.has_watched && (
-          <View className="absolute top-3 right-3 bg-green-500 rounded-full p-1">
+          <View className="absolute top-4 right-4 bg-green-500 rounded-full p-1">
             <CheckCircleIcon color="#FFFFFF" size={20} />
           </View>
         )}
 
-        {/* MediaInfo Overlay - Instant display */}
+        {/* MediaInfo Overlay - Full Screen */}
         {selectedMedia?.id === item.id && (
-          <View className="absolute inset-0 bg-black/80 rounded-xl overflow-hidden">
-            <View className="flex-1 p-4 justify-center">
+          <View className="absolute inset-0 bg-black/90">
+            <View className="flex-1 p-6 justify-center">
               <MediaInfo
                 description={item.description}
                 reward={item.reward}
@@ -212,37 +217,39 @@ export default function ExploreScreen() {
         )}
       </View>
 
-      {/* Media Info Section */}
-      <View className="flex-row justify-between items-start mb-3">
-        <View className="flex-1 mr-3">
-          <Text className="text-primary font-bold mb-1" style={{ fontSize: wp('4%') }}>
-            {item.name}
-          </Text>
-          <Text className="text-primary/80" style={{ fontSize: wp('3.5%') }}>
-            {truncateDescription(item.description)}
-          </Text>
+      {/* Media Info Section - Always Visible */}
+      <View className="flex-1 bg-black/90 backdrop-blur-sm p-4 border-t border-primary/20">
+        <View className="flex-row justify-between items-start">
+          <View className="flex-1 mr-4">
+            <Text className="text-primary font-bold mb-2" style={{ fontSize: wp('4.5%') }}>
+              {item.name}
+            </Text>
+            <Text className="text-primary/90 leading-5" style={{ fontSize: wp('3.8%') }}>
+              {item.description}
+            </Text>
+          </View>
+          
+          {/* Info Button */}
+          <TouchableOpacity 
+            onPress={() => handleInfoPress(item)}
+            className="bg-primary rounded-full p-3 min-w-[44px] min-h-[44px] justify-center items-center"
+            activeOpacity={0.7}
+          >
+            <InformationCircleIcon color="#000000" size={24} />
+          </TouchableOpacity>
         </View>
-        
-        {/* Info Button */}
-        <TouchableOpacity 
-          onPress={() => handleInfoPress(item)}
-          className="bg-primary rounded-full p-2 min-w-[36px] min-h-[36px] justify-center items-center"
-          activeOpacity={0.7}
-        >
-          <InformationCircleIcon color="#000000" size={20} />
-        </TouchableOpacity>
       </View>
     </View>
-  );
+  ), [visibleIndex, selectedMedia, handleEyePress, handleInfoPress, closeMediaInfo]);
 
-  const renderFooter = () => {
+  const renderFooter = useCallback(() => {
     if (!isFetchingNextPage) return null;
     return (
       <View className="py-4">
         <ActivityIndicator color="#FFFF00" size="large" />
       </View>
     );
-  };
+  }, [isFetchingNextPage]);
 
   // Handle viewport changes to pause/play videos
   const handleViewableItemsChanged = useCallback(({ viewableItems }: any) => {
@@ -252,10 +259,12 @@ export default function ExploreScreen() {
     }
   }, []);
 
-  const viewabilityConfig = {
-    itemVisiblePercentThreshold: 50, // Item is considered visible when 50% is shown
-    minimumViewTime: 100, // Minimum time item must be visible
-  };
+  const viewabilityConfig = useMemo(() => ({
+    itemVisiblePercentThreshold: 50,
+    minimumViewTime: 100,
+  }), []);
+
+  const keyExtractor = useCallback((item: Media) => item.id.toString(), []);
 
   return (
     <View className="flex-1 bg-black">
@@ -291,30 +300,26 @@ export default function ExploreScreen() {
             ref={flatListRef}
             data={data?.pages.flatMap((page) => page.data)}
             renderItem={renderMediaItem}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={keyExtractor}
             onEndReached={handleLoadMore}
-            onEndReachedThreshold={0.3}
+            onEndReachedThreshold={0.5}
             ListFooterComponent={renderFooter}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ 
-              paddingBottom: hp('20%'), // Extra padding for expanded info
-            }}
-            snapToInterval={hp('100%')} // Full screen height
+            snapToInterval={Dimensions.get('window').height - 80}
+            snapToAlignment="center"
             decelerationRate="fast"
-            snapToAlignment="start"
-            pagingEnabled={false} // Disable paging to allow infinite scroll
-            getItemLayout={(data, index) => ({
-              length: hp('100%'),
-              offset: hp('100%') * index,
-              index,
-            })}
+            pagingEnabled={false}
             onViewableItemsChanged={handleViewableItemsChanged}
             viewabilityConfig={viewabilityConfig}
-            removeClippedSubviews={true} // Remove off-screen items from memory
-            maxToRenderPerBatch={5} // Increase batch size for better performance
-            windowSize={7} // Keep more items in memory
-            initialNumToRender={3} // Start with 3 items
-            onMomentumScrollEnd={handleLoadMore} // Additional trigger for loading more
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={1}
+            windowSize={3}
+            initialNumToRender={1}
+            getItemLayout={(data, index) => ({
+              length: Dimensions.get('window').height - 80,
+              offset: (Dimensions.get('window').height - 80) * index,
+              index,
+            })}
           />
         </>
       )}
