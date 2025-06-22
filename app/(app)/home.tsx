@@ -14,57 +14,57 @@ export default function HomeScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let mounted = true;
+  // useEffect(() => {
+  //   let mounted = true;
 
-    const setupVideo = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        console.log('Creating video player...');
+  //   const setupVideo = async () => {
+  //     try {
+  //       setIsLoading(true);
+  //       setError(null);
+  //       console.log('Creating video player...');
         
-        // Load the video asset
-        const asset = Asset.fromModule(require('@/assets/background.mp4'));
-        await asset.downloadAsync();
+  //       // Load the video asset
+  //       const asset = Asset.fromModule(require('@/assets/background.mp4'));
+  //       await asset.downloadAsync();
         
-        const videoPlayer = await createVideoPlayer({
-          uri: asset.uri,
-          useCaching: true,
-        });
+  //       const videoPlayer = await createVideoPlayer({
+  //         uri: asset.uri,
+  //         useCaching: true,
+  //       });
         
-        if (!mounted) return;
+  //       if (!mounted) return;
         
-        console.log('Video player created, configuring...');
-        videoPlayer.loop = true;
-        videoPlayer.muted = true;
+  //       console.log('Video player created, configuring...');
+  //       videoPlayer.loop = true;
+  //       videoPlayer.muted = true;
         
-        console.log('Starting playback...');
-        await videoPlayer.play();
-        console.log('Playback started');
+  //       console.log('Starting playback...');
+  //       await videoPlayer.play();
+  //       console.log('Playback started');
         
-        if (mounted) {
-          setPlayer(videoPlayer);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error('Error setting up video:', error);
-        if (mounted) {
-          setError(error instanceof Error ? error.message : 'Failed to load video');
-          setIsLoading(false);
-        }
-      }
-    };
+  //       if (mounted) {
+  //         setPlayer(videoPlayer);
+  //         setIsLoading(false);
+  //       }
+  //     } catch (error) {
+  //       console.error('Error setting up video:', error);
+  //       if (mounted) {
+  //         setError(error instanceof Error ? error.message : 'Failed to load video');
+  //         setIsLoading(false);
+  //       }
+  //     }
+  //   };
 
-    setupVideo();
+  //   setupVideo();
 
-    return () => {
-      mounted = false;
-      if (player) {
-        console.log('Cleaning up video player...');
-        player.pause();
-      }
-    };
-  }, []);
+  //   return () => {
+  //     mounted = false;
+  //     if (player) {
+  //       console.log('Cleaning up video player...');
+  //       player.pause();
+  //     }
+  //   };
+  // }, []);
 
   return (
     <View style={styles.contentContainer}>

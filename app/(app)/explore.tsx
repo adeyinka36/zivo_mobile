@@ -1,33 +1,47 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, Image, TextInput, ActivityIndicator, Dimensions } from 'react-native';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { View, Text, FlatList, Image, TextInput, ActivityIndicator, Dimensions, TouchableOpacity, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
-import { MagnifyingGlassIcon } from 'react-native-heroicons/solid';
+import { MagnifyingGlassIcon, EyeIcon, InformationCircleIcon, CheckCircleIcon } from 'react-native-heroicons/solid';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import axios from 'axios';
-import { BASE_URL } from '@/utils/getUrls';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/context/auth';
+import MediaInfo from '@/components/MediaInfo';
+import FullScreenMedia from '@/components/FullScreenMedia';
+import { VideoView, useVideoPlayer } from 'expo-video';
 
 interface Media {
-  id: number;
-  title: string;
-  description: string;
+  id: string;
+  name: string;
+  file_name: string;
+  mime_type: string;
+  media_type: string;
+  reward: number;
   url: string;
-  thumbnail_url: string;
+  description: string;
+  tags: Array<{
+    id: string;
+    name: string;
+    slug: string;
+  }>;
   created_at: string;
-  user: {
+  updated_at: string;
+  has_watched: boolean;
+  thumbnail: string | null;
+  user?: {
     name: string;
     username: string;
   };
 }
 
 const fetchMedia = async ({ pageParam = 1, searchQuery = '' }) => {
-  const response = await axios.get(`${BASE_URL}/api/media`, {
+  const response = await api.get('/media', {
     params: {
       page: pageParam,
       per_page: 20,
       search: searchQuery,
     },
   });
+  // Laravel resource collections return data directly, not wrapped in data.data
   return response.data;
 };
 
@@ -35,6 +49,10 @@ export default function ExploreScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [selectedMedia, setSelectedMedia] = useState<Media | null>(null);
+  const [fullScreenMedia, setFullScreenMedia] = useState<Media | null>(null);
+  const flatListRef = useRef<FlatList>(null);
+  const queryClient = useQueryClient();
 
   // Debounce search input
   React.useEffect(() => {
@@ -70,24 +88,138 @@ export default function ExploreScreen() {
     }
   };
 
-  const renderMediaItem = ({ item }: { item: Media }) => (
-    <View className="mb-6 px-4">
+  const handleEyePress = (media: Media) => {
+    setFullScreenMedia(media);
+  };
+
+  const handleInfoPress = (media: Media) => {
+    setSelectedMedia(media);
+  };
+
+  const closeMediaInfo = () => {
+    setSelectedMedia(null);
+  };
+
+  const closeFullScreen = () => {
+    setFullScreenMedia(null);
+  };
+
+  const handleWatchComplete = async () => {
+    if (!fullScreenMedia) return;
+    
+    try {
+      // Record watch status via API
+      await api.patch(`/media/${fullScreenMedia.id}/watch`);
+      
+      // Update local state to reflect the watch status
+      // This will trigger a re-render and show the green checkmark
+      console.log('Watch recorded for media:', fullScreenMedia.id);
+      
+      // Invalidate the media query to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['media', debouncedSearch] });
+    } catch (error) {
+      console.error('Failed to record watch status:', error);
+      // Even if the API call fails, we can still show the completion UI
+      // The user will see the green checkmark in the UI
+    }
+  };
+
+  // Truncate description to 25 characters
+  const truncateDescription = (description: string) => {
+    if (description.length <= 25) return description;
+    return description.substring(0, 25) + '...';
+  };
+
+  // Video player component for explore mode
+  const MediaPlayer = ({ media }: { media: Media }) => {
+    const player = useVideoPlayer(media.url, (player) => {
+      player.loop = true;
+      player.muted = true;
+      player.play();
+    });
+
+    if (media.media_type === 'video') {
+      return (
+        <VideoView
+          style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: 12,
+          }}
+          player={player}
+          contentFit="cover"
+        />
+      );
+    }
+
+    return (
       <Image
-        source={{ uri: item.thumbnail_url || item.url }}
-        className="rounded-lg"
-        style={{
-          width: wp('92%'),
-          height: hp('40%'),
-        }}
+        source={{ uri: media.thumbnail || media.url }}
+        className="w-full h-full rounded-xl"
         resizeMode="cover"
       />
-      <View className="mt-2">
-        <Text className="text-primary font-bold" style={{ fontSize: wp('4%') }}>
-          {item.title}
-        </Text>
-        <Text className="text-primary/80" style={{ fontSize: wp('3.5%') }}>
-          by {item.user.name} (@{item.user.username})
-        </Text>
+    );
+  };
+
+  const renderMediaItem = ({ item }: { item: Media }) => (
+    <View className="px-4" style={{ height: hp('100%') }}>
+      {/* Media Container - 65% of screen height, starts below search */}
+      <View className="relative mb-3" style={{ height: hp('65%') }}>
+        <MediaPlayer media={item} />
+        
+        {/* Eye Icon Overlay */}
+        <TouchableOpacity 
+          onPress={() => handleEyePress(item)}
+          className="absolute inset-0 justify-center items-center"
+          activeOpacity={0.8}
+        >
+          <View className="bg-black/50 rounded-full p-3">
+            <EyeIcon color="#FFFF00" size={32} />
+          </View>
+        </TouchableOpacity>
+
+        {/* Watch Status Indicator */}
+        {item.has_watched && (
+          <View className="absolute top-3 right-3 bg-green-500 rounded-full p-1">
+            <CheckCircleIcon color="#FFFFFF" size={20} />
+          </View>
+        )}
+
+        {/* MediaInfo Overlay - Instant display */}
+        {selectedMedia?.id === item.id && (
+          <View className="absolute inset-0 bg-black/80 rounded-xl overflow-hidden">
+            <View className="flex-1 p-4 justify-center">
+              <MediaInfo
+                description={item.description}
+                reward={item.reward}
+                uploader={item.user?.name || 'Unknown'}
+                tags={item.tags}
+                onClose={closeMediaInfo}
+              />
+            </View>
+          </View>
+        )}
+      </View>
+
+      {/* Media Info Section */}
+      <View className="flex-row justify-between items-start mb-3">
+        <View className="flex-1 mr-3">
+          <Text className="text-primary font-bold mb-1" style={{ fontSize: wp('4%') }}>
+            {item.name}
+          </Text>
+          <Text className="text-primary/80" style={{ fontSize: wp('3.5%') }}>
+            {truncateDescription(item.description)}
+          </Text>
+        </View>
+        
+        {/* Info Button */}
+        <TouchableOpacity 
+          onPress={() => handleInfoPress(item)}
+          className="bg-primary rounded-full p-2 min-w-[36px] min-h-[36px] justify-center items-center"
+          activeOpacity={0.7}
+        >
+          <InformationCircleIcon color="#000000" size={20} />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -131,6 +263,7 @@ export default function ExploreScreen() {
         </View>
       ) : (
         <FlatList
+          ref={flatListRef}
           data={data?.pages.flatMap((page) => page.data)}
           renderItem={renderMediaItem}
           keyExtractor={(item) => item.id.toString()}
@@ -138,7 +271,31 @@ export default function ExploreScreen() {
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderFooter}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: hp('5%') }}
+          contentContainerStyle={{ 
+            paddingBottom: hp('20%'), // Extra padding for expanded info
+          }}
+          snapToInterval={hp('100%')} // Full screen height
+          decelerationRate="fast"
+          snapToAlignment="start"
+          pagingEnabled={true}
+          getItemLayout={(data, index) => ({
+            length: hp('100%'),
+            offset: hp('100%') * index,
+            index,
+          })}
+        />
+      )}
+
+      {/* Full Screen Media Overlay */}
+      {fullScreenMedia && (
+        <FullScreenMedia
+          media={{
+            url: fullScreenMedia.url,
+            media_type: fullScreenMedia.media_type as 'image' | 'video',
+            description: fullScreenMedia.description,
+          }}
+          onClose={closeFullScreen}
+          onWatchComplete={handleWatchComplete}
         />
       )}
     </View>

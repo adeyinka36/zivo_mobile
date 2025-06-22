@@ -6,7 +6,7 @@ import { BASE_URL } from '@/utils/getUrls';
 import axios from 'axios';
 
 // Create axios instance with default config
-const api = axios.create({
+export const api = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -14,9 +14,15 @@ const api = axios.create({
   },
 });
 
+console.log('Axios instance created with baseURL:', BASE_URL);
+
 // Add request interceptor to add token to all requests
 api.interceptors.request.use(
   async (config) => {
+    console.log('Making request to:', config.url, 'with method:', config.method);
+    console.log('Request headers:', config.headers);
+    console.log('Request data:', config.data);
+    
     const token = await SecureStore.getItemAsync('userToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -24,14 +30,22 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
 
 // Add response interceptor to handle auth errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('Response received from:', response.config.url, 'with status:', response.status);
+    console.log('Response data:', response.data);
+    return response;
+  },
   async (error) => {
+    console.error('Response error from:', error.config?.url, 'with status:', error.response?.status);
+    console.error('Response error data:', error.response?.data);
+    
     // Only handle 401 errors for non-login requests
     if (error.response?.status === 401 && !error.config.url.includes('/login')) {
       // Clear token and user data on authentication error
@@ -60,7 +74,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (token) {
         // Validate token with backend
         const { data } = await api.get('/user');
-        setUser(data.data);
+        console.log('loadStoredUser - API response:', data);
+        
+        // Handle both response structures: {data: user} or direct user object
+        const userData = data.data || data;
+        console.log('loadStoredUser - Setting user:', userData);
+        setUser(userData);
       } else {
         setUser(null);
       }
@@ -76,7 +95,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
+      console.log('Login attempt - URL:', `${BASE_URL}/login`);
+      console.log('Login attempt - Email:', email);
+      console.log('Login attempt - Headers:', api.defaults.headers);
+      
       let{ data } = await api.post('/login', { email, password });
+
+      console.log('Login response received:', data);
 
       data = data.data;
 
@@ -89,7 +114,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user);
       router.replace('/(app)/home');
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Login error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+          data: error.config?.data
+        }
+      });
+      
       if (error.response?.data?.errors) {
         // Handle validation errors
         const errorMessages = Object.entries(error.response.data.errors)
@@ -166,8 +203,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Don't set loading state to prevent any UI updates that might trigger navigation
       const response = await api.post('/password-email', { email });
       
+      // Handle response structure properly
+      const message = response.data.message || response.data.data?.message || "A reset token has been sent to your email. Please check your inbox.";
+      
       // Return a message indicating a token was sent
-      return "A reset token has been sent to your email. Please check your inbox.";
+      return message;
     } catch (error: any) {
       console.error('Forgot password error:', error);
       if (error.response?.data?.errors) {
@@ -196,13 +236,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token,
       });
 
-      data = data.data;
+      // Handle response structure properly
+      const responseData = data.data || data;
+      const message = responseData.message || 'Your password has been reset successfully.';
 
       // After successful password reset, clear any existing auth state
       await SecureStore.deleteItemAsync('userToken');
       setUser(null);
 
-      return data.message || 'Your password has been reset successfully.';
+      return message;
     } catch (error: any) {
       console.error('Reset password error:', error);
       if (error.response?.data?.errors) {
