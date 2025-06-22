@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Image, TouchableOpacity, StyleSheet, Dimensions, Text, Animated } from 'react-native';
 import { XMarkIcon, CheckCircleIcon } from 'react-native-heroicons/solid';
-import { VideoView, useVideoPlayer } from 'expo-video';
+import { VideoView } from 'expo-video';
+import { useOptimizedVideoPlayer } from '@/hooks/useOptimizedVideoPlayer';
 
 const { width, height } = Dimensions.get('window');
 
@@ -20,8 +21,6 @@ export default function FullScreenMedia({ media, onClose, onWatchComplete }: Ful
   const [showCompletion, setShowCompletion] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const timerRef = useRef<number | null>(null);
-  const videoCheckIntervalRef = useRef<number | null>(null);
-  const playerRef = useRef<any>(null);
 
   // Handle completion animation
   const showCompletionAnimation = () => {
@@ -49,37 +48,16 @@ export default function FullScreenMedia({ media, onClose, onWatchComplete }: Ful
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (videoCheckIntervalRef.current) clearInterval(videoCheckIntervalRef.current);
-      if (playerRef.current) {
-        try {
-          playerRef.current.pause();
-          playerRef.current = null;
-        } catch (error) {
-          // Ignore cleanup errors
-        }
-      }
     };
   }, [media.media_type]);
 
-  // Video player setup and cleanup
-  const player = useVideoPlayer(media.url, (player) => {
-    if (media.media_type === 'video') {
-      playerRef.current = player;
-      player.loop = false;
-      player.muted = false;
-      player.play();
-
-      // Polling for video end (until expo-video supports events)
-      videoCheckIntervalRef.current = setInterval(() => {
-        if (player) {
-          const { currentTime, duration } = player;
-          if (currentTime >= duration - 0.1) {
-            clearInterval(videoCheckIntervalRef.current!);
-            showCompletionAnimation();
-          }
-        }
-      }, 1000);
-    }
+  // Optimized video player for full screen
+  const { player } = useOptimizedVideoPlayer({
+    url: media.url,
+    shouldPlay: media.media_type === 'video',
+    loop: false,
+    muted: false,
+    onEnd: showCompletionAnimation,
   });
 
   return (

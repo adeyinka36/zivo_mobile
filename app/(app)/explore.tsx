@@ -7,7 +7,8 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/context/auth';
 import MediaInfo from '@/components/MediaInfo';
 import FullScreenMedia from '@/components/FullScreenMedia';
-import { VideoView, useVideoPlayer } from 'expo-video';
+import { VideoView } from 'expo-video';
+import { useOptimizedVideoPlayer } from '@/hooks/useOptimizedVideoPlayer';
 
 interface Media {
   id: string;
@@ -51,6 +52,7 @@ export default function ExploreScreen() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedMedia, setSelectedMedia] = useState<Media | null>(null);
   const [fullScreenMedia, setFullScreenMedia] = useState<Media | null>(null);
+  const [visibleIndex, setVisibleIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const queryClient = useQueryClient();
 
@@ -130,12 +132,17 @@ export default function ExploreScreen() {
     return description.substring(0, 25) + '...';
   };
 
-  // Video player component for explore mode
-  const MediaPlayer = ({ media }: { media: Media }) => {
-    const player = useVideoPlayer(media.url, (player) => {
-      player.loop = true;
-      player.muted = true;
-      player.play();
+  // Optimized video player component with viewport detection
+  const MediaPlayer = ({ media, index }: { media: Media; index: number }) => {
+    const isVisible = index === visibleIndex;
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    const { player, isReady } = useOptimizedVideoPlayer({
+      url: media.url,
+      shouldPlay: isVisible && isLoaded,
+      loop: true,
+      muted: true,
+      onReady: () => setIsLoaded(true),
     });
 
     if (media.media_type === 'video') {
@@ -157,15 +164,16 @@ export default function ExploreScreen() {
         source={{ uri: media.thumbnail || media.url }}
         className="w-full h-full rounded-xl"
         resizeMode="cover"
+        onLoad={() => setIsLoaded(true)}
       />
     );
   };
 
-  const renderMediaItem = ({ item }: { item: Media }) => (
+  const renderMediaItem = ({ item, index }: { item: Media; index: number }) => (
     <View className="px-4" style={{ height: hp('100%') }}>
       {/* Media Container - 65% of screen height, starts below search */}
       <View className="relative mb-3" style={{ height: hp('65%') }}>
-        <MediaPlayer media={item} />
+        <MediaPlayer media={item} index={index} />
         
         {/* Eye Icon Overlay */}
         <TouchableOpacity 
@@ -233,6 +241,19 @@ export default function ExploreScreen() {
     );
   };
 
+  // Handle viewport changes to pause/play videos
+  const handleViewableItemsChanged = useCallback(({ viewableItems }: any) => {
+    if (viewableItems.length > 0) {
+      const newVisibleIndex = viewableItems[0].index;
+      setVisibleIndex(newVisibleIndex);
+    }
+  }, []);
+
+  const viewabilityConfig = {
+    itemVisiblePercentThreshold: 50, // Item is considered visible when 50% is shown
+    minimumViewTime: 100, // Minimum time item must be visible
+  };
+
   return (
     <View className="flex-1 bg-black">
       {/* Search Bar */}
@@ -283,6 +304,12 @@ export default function ExploreScreen() {
             offset: hp('100%') * index,
             index,
           })}
+          onViewableItemsChanged={handleViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          removeClippedSubviews={true} // Remove off-screen items from memory
+          maxToRenderPerBatch={3} // Limit items rendered per batch
+          windowSize={5} // Keep only 5 items in memory
+          initialNumToRender={1} // Start with just 1 item
         />
       )}
 
