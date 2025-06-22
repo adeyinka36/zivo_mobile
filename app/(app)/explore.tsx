@@ -76,8 +76,11 @@ export default function ExploreScreen() {
     queryKey: ['media', debouncedSearch],
     queryFn: ({ pageParam }) => fetchMedia({ pageParam, searchQuery: debouncedSearch }),
     getNextPageParam: (lastPage) => {
-      if (lastPage.current_page < lastPage.last_page) {
-        return lastPage.current_page + 1;
+      // Laravel pagination structure: meta.current_page and meta.last_page
+      if (lastPage.meta?.current_page && lastPage.meta?.last_page) {
+        if (lastPage.meta.current_page < lastPage.meta.last_page) {
+          return lastPage.meta.current_page + 1;
+        }
       }
       return undefined;
     },
@@ -283,34 +286,37 @@ export default function ExploreScreen() {
           </Text>
         </View>
       ) : (
-        <FlatList
-          ref={flatListRef}
-          data={data?.pages.flatMap((page) => page.data)}
-          renderItem={renderMediaItem}
-          keyExtractor={(item) => item.id.toString()}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={renderFooter}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ 
-            paddingBottom: hp('20%'), // Extra padding for expanded info
-          }}
-          snapToInterval={hp('100%')} // Full screen height
-          decelerationRate="fast"
-          snapToAlignment="start"
-          pagingEnabled={true}
-          getItemLayout={(data, index) => ({
-            length: hp('100%'),
-            offset: hp('100%') * index,
-            index,
-          })}
-          onViewableItemsChanged={handleViewableItemsChanged}
-          viewabilityConfig={viewabilityConfig}
-          removeClippedSubviews={true} // Remove off-screen items from memory
-          maxToRenderPerBatch={3} // Limit items rendered per batch
-          windowSize={5} // Keep only 5 items in memory
-          initialNumToRender={1} // Start with just 1 item
-        />
+        <>
+          <FlatList
+            ref={flatListRef}
+            data={data?.pages.flatMap((page) => page.data)}
+            renderItem={renderMediaItem}
+            keyExtractor={(item) => item.id.toString()}
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.3}
+            ListFooterComponent={renderFooter}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ 
+              paddingBottom: hp('20%'), // Extra padding for expanded info
+            }}
+            snapToInterval={hp('100%')} // Full screen height
+            decelerationRate="fast"
+            snapToAlignment="start"
+            pagingEnabled={false} // Disable paging to allow infinite scroll
+            getItemLayout={(data, index) => ({
+              length: hp('100%'),
+              offset: hp('100%') * index,
+              index,
+            })}
+            onViewableItemsChanged={handleViewableItemsChanged}
+            viewabilityConfig={viewabilityConfig}
+            removeClippedSubviews={true} // Remove off-screen items from memory
+            maxToRenderPerBatch={5} // Increase batch size for better performance
+            windowSize={7} // Keep more items in memory
+            initialNumToRender={3} // Start with 3 items
+            onMomentumScrollEnd={handleLoadMore} // Additional trigger for loading more
+          />
+        </>
       )}
 
       {/* Full Screen Media Overlay */}
