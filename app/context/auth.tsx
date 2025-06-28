@@ -14,14 +14,10 @@ export const api = axios.create({
   },
 });
 
-console.log('Axios instance created with baseURL:', BASE_URL);
 
 // Add request interceptor to add token to all requests
 api.interceptors.request.use(
   async (config) => {
-    console.log('Making request to:', config.url, 'with method:', config.method);
-    console.log('Request headers:', config.headers);
-    console.log('Request data:', config.data);
     
     const token = await SecureStore.getItemAsync('userToken');
     if (token) {
@@ -38,13 +34,9 @@ api.interceptors.request.use(
 // Add response interceptor to handle auth errors
 api.interceptors.response.use(
   (response) => {
-    console.log('Response received from:', response.config.url, 'with status:', response.status);
-    console.log('Response data:', response.data);
     return response;
   },
   async (error) => {
-    console.error('Response error from:', error.config?.url, 'with status:', error.response?.status);
-    console.error('Response error data:', error.response?.data);
     
     // Only handle 401 errors for non-login requests
     if (error.response?.status === 401 && !error.config.url.includes('/login')) {
@@ -74,11 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (token) {
         // Validate token with backend
         const { data } = await api.get('/user');
-        console.log('loadStoredUser - API response:', data);
-        
         // Handle both response structures: {data: user} or direct user object
         const userData = data.data || data;
-        console.log('loadStoredUser - Setting user:', userData);
         setUser(userData);
       } else {
         setUser(null);
@@ -95,13 +84,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      console.log('Login attempt - URL:', `${BASE_URL}/login`);
-      console.log('Login attempt - Email:', email);
-      console.log('Login attempt - Headers:', api.defaults.headers);
       
       let{ data } = await api.post('/login', { email, password });
-
-      console.log('Login response received:', data);
 
       data = data.data;
 
@@ -162,7 +146,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signup = async (email: string, password: string, name: string, username: string) => {
     try {
-      console.log('Attempting signup with data:', { email, name, username, password: '[REDACTED]' });
       
       let { data } = await api.post('/register', {
         email,

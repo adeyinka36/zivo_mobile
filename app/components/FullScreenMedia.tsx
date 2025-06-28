@@ -11,6 +11,7 @@ interface FullScreenMediaProps {
     url: string;
     media_type: 'image' | 'video';
     description?: string;
+    has_watched?: boolean;
   };
   onClose: () => void;
   onWatchComplete: () => void;
@@ -18,8 +19,8 @@ interface FullScreenMediaProps {
 
 export default function FullScreenMedia({ media, onClose, onWatchComplete }: FullScreenMediaProps) {
   const [timeLeft, setTimeLeft] = useState(10);
-  const [showCompletion, setShowCompletion] = useState(false);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [showCompletion, setShowCompletion] = useState(media.has_watched || false);
+  const fadeAnim = useRef(new Animated.Value(media.has_watched ? 1 : 0)).current;
   const timerRef = useRef<number | null>(null);
 
   // Handle completion animation
@@ -33,9 +34,9 @@ export default function FullScreenMedia({ media, onClose, onWatchComplete }: Ful
     onWatchComplete();
   };
 
-  // Timer for non-video media
+  // Timer for non-video media (only if not already watched)
   useEffect(() => {
-    if (media.media_type !== 'video') {
+    if (media.media_type !== 'video' && !media.has_watched) {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
@@ -49,7 +50,7 @@ export default function FullScreenMedia({ media, onClose, onWatchComplete }: Ful
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [media.media_type]);
+  }, [media.media_type, media.has_watched]);
 
   // Optimized video player for full screen
   const { player } = useOptimizedVideoPlayer({
@@ -80,7 +81,7 @@ export default function FullScreenMedia({ media, onClose, onWatchComplete }: Ful
         )}
       </View>
 
-      {media.media_type !== 'video' && !showCompletion && (
+      {media.media_type !== 'video' && !showCompletion && !media.has_watched && (
         <View style={styles.timerContainer}>
           <View style={styles.timerBackground}>
             <Text style={styles.timerText}>{timeLeft}s</Text>

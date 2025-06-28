@@ -99,7 +99,6 @@ export default function PaymentScreen() {
       return;
     }
 
-    console.log('Starting card payment with payment sheet...');
     setIsProcessing(true);
 
     try {

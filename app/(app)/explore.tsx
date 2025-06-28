@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { View, Text, FlatList, Image, TextInput, ActivityIndicator, Dimensions, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, FlatList, Image, TextInput, ActivityIndicator, Dimensions, TouchableOpacity, Animated, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MagnifyingGlassIcon, EyeIcon, InformationCircleIcon, CheckCircleIcon } from 'react-native-heroicons/solid';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -9,6 +9,7 @@ import MediaInfo from '@/components/MediaInfo';
 import FullScreenMedia from '@/components/FullScreenMedia';
 import { VideoView } from 'expo-video';
 import { useOptimizedVideoPlayer } from '@/hooks/useOptimizedVideoPlayer';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Media {
   id: string;
@@ -19,19 +20,12 @@ interface Media {
   reward: number;
   url: string;
   description: string;
-  tags: Array<{
-    id: string;
-    name: string;
-    slug: string;
-  }>;
+  tags: Array<{ id: string; name: string; slug: string }>;
   created_at: string;
   updated_at: string;
   has_watched: boolean;
   thumbnail: string | null;
-  user?: {
-    name: string;
-    username: string;
-  };
+  user?: { name: string; username: string };
 }
 
 const fetchMedia = async ({ pageParam = 1, searchQuery = '' }) => {
@@ -42,7 +36,6 @@ const fetchMedia = async ({ pageParam = 1, searchQuery = '' }) => {
       search: searchQuery,
     },
   });
-  // Laravel resource collections return data directly, not wrapped in data.data
   return response.data;
 };
 
@@ -55,13 +48,32 @@ export default function ExploreScreen() {
   const [visibleIndex, setVisibleIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
 
-  // Debounce search input
-  React.useEffect(() => {
+  const getResponsiveHeights = useCallback(() => {
+    const screenHeight = Dimensions.get('window').height;
+    const screenWidth = Dimensions.get('window').width;
+    const searchBarHeight = Math.max(60, hp('8%'));
+    const topInset = insets.top || 0;
+    const bottomInset = insets.bottom || 0;
+    const infoSectionHeight = 183;
+    const availableHeight = screenHeight - searchBarHeight - topInset - infoSectionHeight;
+
+    return {
+      searchBarHeight,
+      availableHeight,
+      infoSectionHeight,
+      topInset,
+      bottomInset,
+      screenHeight,
+      screenWidth
+    };
+  }, [insets.top, insets.bottom]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
     }, 500);
-
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
@@ -76,7 +88,6 @@ export default function ExploreScreen() {
     queryKey: ['media', debouncedSearch],
     queryFn: ({ pageParam }) => fetchMedia({ pageParam, searchQuery: debouncedSearch }),
     getNextPageParam: (lastPage) => {
-      // Laravel pagination structure: meta.current_page and meta.last_page
       if (lastPage.meta?.current_page && lastPage.meta?.last_page) {
         if (lastPage.meta.current_page < lastPage.meta.last_page) {
           return lastPage.meta.current_page + 1;
@@ -111,147 +122,132 @@ export default function ExploreScreen() {
 
   const handleWatchComplete = async () => {
     if (!fullScreenMedia) return;
-    
     try {
-      // Record watch status via API
       await api.patch(`/media/${fullScreenMedia.id}/watch`);
-      
-      // Update local state to reflect the watch status
-      // This will trigger a re-render and show the green checkmark
-      console.log('Watch recorded for media:', fullScreenMedia.id);
-      
-      // Invalidate the media query to refresh the data
       queryClient.invalidateQueries({ queryKey: ['media', debouncedSearch] });
     } catch (error) {
       console.error('Failed to record watch status:', error);
-      // Even if the API call fails, we can still show the completion UI
-      // The user will see the green checkmark in the UI
     }
   };
 
-  // Truncate description to 25 characters
   const truncateDescription = (description: string) => {
     if (description.length <= 25) return description;
     return description.substring(0, 25) + '...';
   };
 
-  // Simple video player that only renders for the visible item
   const VideoPlayer = useCallback(({ media }: { media: Media }) => {
     const { player } = useOptimizedVideoPlayer({
       url: media.url,
-      shouldPlay: true, // Always play when rendered
+      shouldPlay: true,
       loop: true,
       muted: true,
     });
 
     return (
       <VideoView
-        style={{
-          width: '100%',
-          height: '100%',
-          borderRadius: 0,
-        }}
+        style={{ width: '100%', height: '100%' }}
         player={player}
         contentFit="cover"
       />
     );
   }, []);
 
-  // Optimized media player component
   const MediaPlayer = useCallback(({ media, index }: { media: Media; index: number }) => {
     const isVisible = index === visibleIndex;
-    
-    // Only render video for the currently visible item
     if (media.media_type === 'video' && isVisible) {
       return <VideoPlayer media={media} />;
     }
-
-    // Show thumbnail for videos when not visible, or actual image for images
     return (
       <Image
         source={{ uri: media.thumbnail || media.url }}
-        className="w-full h-full"
-        style={{ borderRadius: 0 }}
+        style={{ width: '100%', height: '100%' }}
         resizeMode="cover"
       />
     );
   }, [visibleIndex, VideoPlayer]);
 
-  const renderMediaItem = useCallback(({ item, index }: { item: Media; index: number }) => (
-    <View className="flex-1" style={{ height: Dimensions.get('window').height - 80 }}>
-      {/* Media Container - Reduced height to make room for info */}
-      <View className="relative" style={{ height: (Dimensions.get('window').height - 80) * 0.75 }}>
-        <MediaPlayer media={item} index={index} />
-        
-        {/* Eye Icon Overlay - Centered */}
-        <TouchableOpacity 
-          onPress={() => handleEyePress(item)}
-          className="absolute inset-0 justify-center items-center"
-          activeOpacity={0.8}
-        >
-          <View className="bg-black/50 rounded-full p-3">
-            <EyeIcon color="#FFFF00" size={32} />
-          </View>
-        </TouchableOpacity>
+  const renderMediaItem = useCallback(({ item, index }: { item: Media; index: number }) => {
+    const heights = getResponsiveHeights();
+    const totalItemHeight = heights.availableHeight + heights.infoSectionHeight;
 
-        {/* Watch Status Indicator */}
-        {item.has_watched && (
-          <View className="absolute top-4 right-4 bg-green-500 rounded-full p-1">
-            <CheckCircleIcon color="#FFFFFF" size={20} />
-          </View>
-        )}
+    return (
+      <View style={{ height: totalItemHeight }}>
+        <View style={{ height: heights.availableHeight }}>
+          <MediaPlayer media={item} index={index} />
 
-        {/* MediaInfo Overlay - Full Screen */}
-        {selectedMedia?.id === item.id && (
-          <View className="absolute inset-0 bg-black/90">
-            <View className="flex-1 p-6 justify-center">
-              <MediaInfo
-                description={item.description}
-                reward={item.reward}
-                uploader={item.user?.name || 'Unknown'}
-                tags={item.tags}
-                onClose={closeMediaInfo}
-              />
-            </View>
-          </View>
-        )}
-      </View>
+          {/* Permanent dark overlay for better button visibility */}
+          <View style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: '#00000070'
+          }} />
 
-      {/* Media Info Section - Always Visible */}
-      <View className="flex-1 bg-black/90 backdrop-blur-sm p-4 border-t border-primary/20">
-        <View className="flex-row justify-between items-start">
-          <View className="flex-1 mr-4">
-            <Text className="text-primary font-bold mb-2" style={{ fontSize: wp('4.5%') }}>
-              {item.name}
-            </Text>
-            <Text className="text-primary/90 leading-5" style={{ fontSize: wp('3.8%') }}>
-              {item.description}
-            </Text>
-          </View>
-          
-          {/* Info Button */}
-          <TouchableOpacity 
-            onPress={() => handleInfoPress(item)}
-            className="bg-primary rounded-full p-3 min-w-[44px] min-h-[44px] justify-center items-center"
-            activeOpacity={0.7}
-          >
-            <InformationCircleIcon color="#000000" size={24} />
+          <TouchableOpacity onPress={() => handleEyePress(item)} style={{ position: 'absolute', top: '45%', left: '45%', zIndex: 10 }}>
+            <EyeIcon color="#FFFF00" size={Math.max(24, wp('8%'))} />
           </TouchableOpacity>
+          {item.has_watched && (
+            <View style={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}>
+              <CheckCircleIcon color="#00FF00" size={Math.max(16, wp('10%'))} />
+            </View>
+          )}
+          {selectedMedia?.id === item.id && (
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#000000F5', justifyContent: 'center', alignItems: 'center', zIndex: 20 }}>
+              <View style={{ width: '98%', padding: 20 }}>
+                <MediaInfo
+                  description={item.description}
+                  reward={item.reward}
+                  uploader={item.user?.name || 'Unknown'}
+                  tags={item.tags}
+                  onClose={closeMediaInfo}
+                />
+              </View>
+            </View>
+          )}
+        </View>
+        <View style={{ height: heights.infoSectionHeight, padding: 16, backgroundColor: '#000', borderTopColor: '#333', borderTopWidth: 1 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flex: 1, marginRight: 12 }}>
+              <Text style={{ color: '#FFFF00', fontSize: Math.max(14, wp('3.5%')), marginBottom: 8 }} numberOfLines={2}>
+                {truncateDescription(item.description)}
+              </Text>
+
+              {item.tags && item.tags.length > 0 && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 }}>
+                  {item.tags.slice(0, 3).map(tag => (
+                    <View key={tag.id} style={{ backgroundColor: '#FFFF00', borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, marginRight: 8, marginBottom: 4 }}>
+                      <Text style={{ color: '#000', fontWeight: '600', fontSize: Math.max(10, wp('2.5%')) }}>#{tag.name}</Text>
+                    </View>
+                  ))}
+                  {item.tags.length > 3 && (
+                    <Text style={{ color: '#AAA', fontSize: Math.max(10, wp('2.5%')), alignSelf: 'center', marginLeft: 4 }}>
+                      +{item.tags.length - 3} more
+                    </Text>
+                  )}
+                </View>
+              )}
+            </View>
+
+            <TouchableOpacity onPress={() => handleInfoPress(item)} style={{ padding: 10, backgroundColor: '#FFFF00', borderRadius: 999 }}>
+              <InformationCircleIcon color="#000" size={Math.max(18, wp('5%'))} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-    </View>
-  ), [visibleIndex, selectedMedia, handleEyePress, handleInfoPress, closeMediaInfo]);
+    );
+  }, [visibleIndex, selectedMedia, handleEyePress, handleInfoPress, closeMediaInfo, getResponsiveHeights]);
 
   const renderFooter = useCallback(() => {
     if (!isFetchingNextPage) return null;
     return (
-      <View className="py-4">
+      <View style={{ paddingVertical: 16 }}>
         <ActivityIndicator color="#FFFF00" size="large" />
       </View>
     );
   }, [isFetchingNextPage]);
 
-  // Handle viewport changes to pause/play videos
   const handleViewableItemsChanged = useCallback(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {
       const newVisibleIndex = viewableItems[0].index;
@@ -266,71 +262,68 @@ export default function ExploreScreen() {
 
   const keyExtractor = useCallback((item: Media) => item.id.toString(), []);
 
+  const heights = getResponsiveHeights();
+  const totalItemHeight = heights.availableHeight + heights.infoSectionHeight;
+
   return (
-    <View className="flex-1 bg-black">
-      {/* Search Bar */}
-      <View className="px-4 py-2">
-        <View className="flex-row items-center bg-black border border-primary rounded-lg px-4 py-2">
-          <MagnifyingGlassIcon color="#FFFF00" size={wp('5%')} />
+    <View style={{ flex: 1, backgroundColor: '#000' }}>
+      <View style={{ height: heights.searchBarHeight, paddingHorizontal: 16, justifyContent: 'center' }}>
+        <View style={{ flexDirection: 'row', backgroundColor: '#1c1c1c', borderRadius: 8, alignItems: 'center', paddingHorizontal: 12 }}>
+          <MagnifyingGlassIcon color="#FFFF00" size={Math.max(20, wp('5%'))} />
           <TextInput
-            className="flex-1 ml-2 text-primary font-bold"
+            style={{ flex: 1, marginLeft: 8, color: '#FFFF00', fontWeight: 'bold', fontSize: Math.max(14, wp('4%')) }}
             placeholder="Search media..."
             placeholderTextColor="#FFFF00"
             value={searchQuery}
             onChangeText={setSearchQuery}
-            style={{ fontSize: wp('4%') }}
           />
         </View>
       </View>
 
-      {/* Media List */}
       {isLoading ? (
-        <View className="flex-1 justify-center items-center">
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator color="#FFFF00" size="large" />
         </View>
       ) : isError ? (
-        <View className="flex-1 justify-center items-center">
-          <Text className="text-error text-center" style={{ fontSize: wp('4%') }}>
-            Error loading media. Please try again.
-          </Text>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: 'red', fontSize: Math.max(14, wp('4%')) }}>Error loading media. Please try again.</Text>
         </View>
       ) : (
-        <>
-          <FlatList
-            ref={flatListRef}
-            data={data?.pages.flatMap((page) => page.data)}
-            renderItem={renderMediaItem}
-            keyExtractor={keyExtractor}
-            onEndReached={handleLoadMore}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={renderFooter}
-            showsVerticalScrollIndicator={false}
-            snapToInterval={Dimensions.get('window').height - 80}
-            snapToAlignment="center"
-            decelerationRate="fast"
-            pagingEnabled={false}
-            onViewableItemsChanged={handleViewableItemsChanged}
-            viewabilityConfig={viewabilityConfig}
-            removeClippedSubviews={true}
-            maxToRenderPerBatch={1}
-            windowSize={3}
-            initialNumToRender={1}
-            getItemLayout={(data, index) => ({
-              length: Dimensions.get('window').height - 80,
-              offset: (Dimensions.get('window').height - 80) * index,
-              index,
-            })}
-          />
-        </>
+        <FlatList
+          ref={flatListRef}
+          data={data?.pages.flatMap((page) => page.data)}
+          renderItem={renderMediaItem}
+          keyExtractor={keyExtractor}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={renderFooter}
+          showsVerticalScrollIndicator={false}
+          snapToInterval={totalItemHeight}
+          snapToAlignment="start"
+          decelerationRate={Platform.OS === 'ios' ? 0.998 : 0.9}
+          pagingEnabled={false}
+          onViewableItemsChanged={handleViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={1}
+          windowSize={3}
+          initialNumToRender={1}
+          getItemLayout={(data, index) => ({
+            length: totalItemHeight,
+            offset: totalItemHeight * index,
+            index,
+          })}
+          contentContainerStyle={{ paddingBottom: heights.bottomInset }}
+        />
       )}
 
-      {/* Full Screen Media Overlay */}
       {fullScreenMedia && (
         <FullScreenMedia
           media={{
             url: fullScreenMedia.url,
             media_type: fullScreenMedia.media_type as 'image' | 'video',
             description: fullScreenMedia.description,
+            has_watched: fullScreenMedia.has_watched,
           }}
           onClose={closeFullScreen}
           onWatchComplete={handleWatchComplete}
@@ -338,4 +331,4 @@ export default function ExploreScreen() {
       )}
     </View>
   );
-} 
+}
