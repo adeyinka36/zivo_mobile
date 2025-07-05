@@ -10,6 +10,7 @@ import FullScreenMedia from '@/components/FullScreenMedia';
 import { VideoView } from 'expo-video';
 import { useOptimizedVideoPlayer } from '@/hooks/useOptimizedVideoPlayer';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Media {
   id: string;
@@ -41,6 +42,7 @@ const fetchMedia = async ({ pageParam = 1, searchQuery = '' }) => {
 
 export default function ExploreScreen() {
   const router = useRouter();
+  const { user, setUser } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedMedia, setSelectedMedia] = useState<Media | null>(null);
@@ -121,12 +123,32 @@ export default function ExploreScreen() {
   };
 
   const handleWatchComplete = async () => {
-    if (!fullScreenMedia) return;
+    if (!fullScreenMedia || !user) return;
+    
+    // Optimistic update - update UI immediately
+    const previousData = queryClient.getQueryData(['media', debouncedSearch]);
+    
+    queryClient.setQueryData(['media', debouncedSearch], (oldData: any) => {
+      if (!oldData) return oldData;
+      
+      return {
+        ...oldData,
+        pages: oldData.pages.map((page: any) => ({
+          ...page,
+          data: page.data.map((item: Media) => 
+            item.id === fullScreenMedia.id 
+              ? { ...item, has_watched: true }
+              : item
+          )
+        }))
+      };
+    });
+    
     try {
-      await api.patch(`/media/${fullScreenMedia.id}/watch`);
-      queryClient.invalidateQueries({ queryKey: ['media', debouncedSearch] });
+     await api.post(`/media-watched/${fullScreenMedia.id}/${user.id}`)
     } catch (error) {
       console.error('Failed to record watch status:', error);
+      queryClient.setQueryData(['media', debouncedSearch], previousData);
     }
   };
 
@@ -148,6 +170,7 @@ export default function ExploreScreen() {
         style={{ width: '100%', height: '100%' }}
         player={player}
         contentFit="cover"
+        nativeControls={false}
       />
     );
   }, []);
@@ -319,6 +342,7 @@ export default function ExploreScreen() {
 
       {fullScreenMedia && (
         <FullScreenMedia
+          key={fullScreenMedia.id}
           media={{
             url: fullScreenMedia.url,
             media_type: fullScreenMedia.media_type as 'image' | 'video',

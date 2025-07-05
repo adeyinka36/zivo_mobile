@@ -59,6 +59,7 @@ export default function FullScreenMedia({ media, onClose, onWatchComplete }: Ful
     loop: false,
     muted: false,
     onEnd: showCompletionAnimation,
+    
   });
 
   return (
