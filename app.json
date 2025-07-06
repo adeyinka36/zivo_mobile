@@ -4,7 +4,7 @@
     "slug": "zivo_mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/logo.png",
     "userInterfaceStyle": "light",
     "extra": {
       "devHost": "192.168.1.159",
@@ -12,11 +12,11 @@
         "origin": false
       },
       "eas": {
-        "projectId": "6e27c21c-41b3-40f9-9bfd-1e5dce873c02"
+        "projectId": "13c4d117-4774-4823-8b5b-f4ddf06d0d04"
       }
     },
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/images/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -39,7 +39,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
@@ -59,4 +59,4 @@
       "react-native-video"
     ]
   }
-}
+} 

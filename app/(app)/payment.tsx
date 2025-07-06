@@ -3,8 +3,8 @@ import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-na
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useStripe, useConfirmPayment, usePaymentSheet } from '@stripe/stripe-react-native';
 import { useAuth } from '@/hooks/useAuth';
-import { PaymentService } from '@/services/paymentService';
-import { PaymentMethod } from '@/types/payment';
+import PaymentService from '@/services/paymentService';
+import type { PaymentMethod } from '@/types/payment';
 import { ArrowLeftIcon } from 'react-native-heroicons/solid';
 
 export default function PaymentScreen() {

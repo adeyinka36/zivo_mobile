@@ -3,7 +3,7 @@ import { Text, View, Image, TextInput, TouchableOpacity, ActivityIndicator, Plat
 import { useForm, Controller } from 'react-hook-form';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import LoadingScreen from '@/components/LoadingScreen';

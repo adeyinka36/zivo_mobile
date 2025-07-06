@@ -1,13 +1,13 @@
-import { api } from '@/context/auth';
+import { api } from '../context/auth';
 import { 
   PaymentIntent, 
   PaymentStatus, 
   PaymentHistory, 
   RefundRequest, 
   RefundResponse 
-} from '@/types/payment';
+} from 'types/payment';
 
-export class PaymentService {
+ class PaymentService {
   /**
    * Create payment intent for media upload
    */
@@ -93,3 +93,5 @@ export class PaymentService {
     });
   }
 } 
+
+export default PaymentService;

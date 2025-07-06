@@ -9,20 +9,25 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Header from '@/components/Header';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import Constants from 'expo-constants';
+import NotificationManager from "@/components/NotificationManager";
+import {NotificationProvider} from "@/context/NotificationContext";
+
 
 // Create a client
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const pathname = usePathname();
 
   useEffect(() => {
-
+    console.log('---------->',isAuthenticated, user);
     if (!isLoading) {
-      if (!isAuthenticated && pathname.startsWith('/(app)')) {
+      // If not authenticated and trying to access app routes, redirect to login
+      if (!isAuthenticated && (pathname.startsWith('/(app)') || pathname === '/')) {
         router.replace('/(auth)/login');
       }
+      // If authenticated and trying to access auth routes, redirect to home
       else if (isAuthenticated && pathname.startsWith('/(auth)')) {
         router.replace('/(app)/home');
       }
@@ -59,7 +64,10 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
           <AuthProvider>
-            <RootLayoutNav />
+            <NotificationProvider>
+              <RootLayoutNav />
+              <NotificationManager />
+            </NotificationProvider>
           </AuthProvider>
         </SafeAreaProvider>
       </QueryClientProvider>

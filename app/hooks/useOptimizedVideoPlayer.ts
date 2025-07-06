@@ -10,7 +10,7 @@ interface UseOptimizedVideoPlayerOptions {
   onEnd?: () => void;
 }
 
-export const useOptimizedVideoPlayer = ({
+const  useOptimizedVideoPlayer = ({
   url,
   shouldPlay,
   loop = false,
@@ -107,3 +107,5 @@ export const useOptimizedVideoPlayer = ({
     isReady,
   };
 }; 
+
+export default useOptimizedVideoPlayer;

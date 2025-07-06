@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Image, TouchableOpacity, StyleSheet, Dimensions, Text, Animated } from 'react-native';
 import { XMarkIcon, CheckCircleIcon } from 'react-native-heroicons/solid';
 import { VideoView } from 'expo-video';
-import { useOptimizedVideoPlayer } from '@/hooks/useOptimizedVideoPlayer';
+import  useOptimizedVideoPlayer  from '../hooks/useOptimizedVideoPlayer';
 
 const { width, height } = Dimensions.get('window');
 

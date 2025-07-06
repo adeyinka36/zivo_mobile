@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Image, TouchableOpacity, Text } from 'react-native';
 import { BellIcon } from 'react-native-heroicons/solid';
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 
 interface HeaderProps {
   onNotificationPress?: () => void;
