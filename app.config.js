@@ -39,7 +39,8 @@ export default {
       package: 'com.zivo.app',
       edgeToEdgeEnabled: true,
       usesCleartextTraffic: true,
-      permissions: ['android.permission.INTERNET']
+      permissions: ['android.permission.INTERNET'],
+      googleServicesFile: "./google-services.json"
     },
     web: {
       favicon: './assets/images/logo.png',
@@ -55,7 +56,15 @@ export default {
       ],
       'expo-router',
       'expo-video',
-      'react-native-video'
+      'react-native-video',
+      [
+        'expo-notifications',
+        {
+          icon: './assets/images/icon.png',
+          color: '#ffffff',
+          sounds: ['./assets/sounds/notification.wav']
+        }
+      ]
     ],
     extra: {
       devHost: '192.168.1.159',

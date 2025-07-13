@@ -1,4 +1,4 @@
-import { Stack, usePathname } from 'expo-router';
+import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { AuthProvider } from '@/context/auth';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,7 +11,8 @@ import { StripeProvider } from '@stripe/stripe-react-native';
 import Constants from 'expo-constants';
 import NotificationManager from "@/components/NotificationManager";
 import {NotificationProvider} from "@/context/NotificationContext";
-
+import * as Linking from 'expo-linking';
+import { QuizProvider } from '@/context/QuizContext';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -19,6 +20,7 @@ const queryClient = new QueryClient();
 function RootLayoutNav() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const pathname = usePathname();
+  const segments = useSegments();
 
   useEffect(() => {
     console.log('---------->',isAuthenticated, user);
@@ -33,6 +35,24 @@ function RootLayoutNav() {
       }
     }
   }, [isAuthenticated, isLoading, pathname]);
+
+  // Handle deep links
+  useEffect(() => {
+    const handleDeepLink = (url: string) => {
+      console.log('Deep link received:', url);
+      // Handle deep link navigation here
+      if (url.includes('quiz')) {
+        router.push('/(app)/explore');
+      }
+    };
+
+    // Listen for incoming links
+    const subscription = Linking.addEventListener('url', (event) => {
+      handleDeepLink(event.url);
+    });
+
+    return () => subscription?.remove();
+  }, []);
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -64,10 +84,14 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
           <AuthProvider>
+          <QuizProvider>
             <NotificationProvider>
+              
               <RootLayoutNav />
               <NotificationManager />
+           
             </NotificationProvider>
+            </QuizProvider>
           </AuthProvider>
         </SafeAreaProvider>
       </QueryClientProvider>

@@ -6,6 +6,8 @@ import { usePathname, useRouter } from "expo-router";
 import { useAuth } from '../hooks/useAuth';
 import useNotification  from "@/context/NotificationContext";
 import { api } from "@/context/auth";
+import { useQuiz } from "@/context/QuizContext";
+import { MediaWithQuestionType } from "@/types/MediaWithQuestion";
 
 
 export const storePushToken = async (userId: string, pushToken: string): Promise<boolean> =>{
@@ -22,9 +24,9 @@ export const storePushToken = async (userId: string, pushToken: string): Promise
 
 export const getPushToken = async (userId: string) => {
     try {
-        const tokenRes = await Notifications.getExpoPushTokenAsync({
-            projectId: "6e27c21c-41b3-40f9-9bfd-1e5dce873c02",
-        });
+        const tokenRes = await Notifications.getExpoPushTokenAsync(
+            {projectId: "13c4d117-4774-4823-8b5b-f4ddf06d0d04"},
+        );
         
         await storePushToken(userId, tokenRes.data);
         return tokenRes.data;
@@ -39,6 +41,7 @@ export default function NotificationManager() {
   const { user } = useAuth();
   const router = useRouter();
   const {setNotificationData} = useNotification();
+  const { setQuizData, quizData } = useQuiz();
 
   // Register for push notifications
   useEffect(() => {
@@ -59,8 +62,8 @@ export default function NotificationManager() {
           return;
         }
 
-        const tokenRes = await Notifications.getExpoPushTokenAsync();
-        await storePushToken(user.id, tokenRes.data);
+        // const tokenRes = await Notifications.getExpoPushTokenAsync();
+        // await storePushToken(user.id, tokenRes.data);
       } else {
         alert("Must use physical device for Push Notifications");
       }
@@ -94,8 +97,11 @@ export default function NotificationManager() {
   useEffect(() => {
     const receivedSubscription = Notifications.addNotificationReceivedListener(notification => {
       const data = notification.request.content.data;
-         //do something
-         console.log('🔔 notification received------',data);
+      if(data.type === 'quiz_invitation') {
+        setQuizData(data.media as MediaWithQuestionType);
+        console.log('🔔 quiz invitation recieved------>',data);
+        router.replace('/(app)/quiz-invite');
+       }
     });
   
     return () => {
@@ -108,9 +114,10 @@ export default function NotificationManager() {
 
     const responseSub = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data;
-      if(data.type === 'quiz_invite') {
-       //do something
-       console.log('🔔 notification response received------',data);
+      if(data.type === 'quiz_invitation') {
+       setQuizData(data.media as MediaWithQuestionType);
+       console.log('🔔 Here is------',quizData);
+       router.replace('/(app)/quiz-invite');
       }
        
       const handleNotification = async () => {
@@ -124,7 +131,7 @@ export default function NotificationManager() {
     });
   
     return () => responseSub.remove();
-  }, [setNotificationData]);
+  }, [setNotificationData, setQuizData]);
 
   return null;
 }
