@@ -47,4 +47,58 @@ export interface RefundResponse {
   status: string;
 }
 
-export type PaymentMethod = 'Card' | 'ApplePay' | 'GooglePay'; 
+export type PaymentMethod = 'Card' | 'ApplePay' | 'GooglePay';
+
+export interface CreateFormState {
+  media: {
+    uri: string;
+    type: 'image' | 'video';
+    name: string;
+    size: number;
+  } | null;
+  description: string;
+  tags: string[];
+  reward: number;
+  questions: Array<{
+    id: string;
+    question: string;
+    options: string[];
+    correctAnswer: number;
+  }>;
+}
+
+export interface PaymentMetadata {
+  description: string;
+  tags: string[];
+  reward: number;
+  questions: Array<{
+    question: string;
+    answer: string;
+    option_a: string;
+    option_b: string;
+    option_c: string;
+    option_d: string;
+  }>;
+}
+
+export interface PaymentIntentResponse {
+  client_secret: string;
+  payment_id: string;
+  existing: boolean;
+}
+
+export interface UploadAfterPaymentRequest {
+  payment_id: string;
+  file: any;
+  description: string;
+  tags: string[];
+  reward: number;
+  questions: Array<{
+    question: string;
+    answer: string;
+    option_a: string;
+    option_b: string;
+    option_c: string;
+    option_d: string;
+  }>;
+} 

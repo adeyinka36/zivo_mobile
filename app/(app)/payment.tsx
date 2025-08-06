@@ -3,24 +3,25 @@ import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-na
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useStripe, useConfirmPayment, usePaymentSheet } from '@stripe/stripe-react-native';
 import { useAuth } from '@/hooks/useAuth';
-import PaymentService from '@/services/paymentService';
-import type { PaymentMethod } from '@/types/payment';
+import { PaymentService } from '../../services/paymentService';
+import { FormStateService } from '../../services/formStateService';
+import type { PaymentMethod } from '../../types/payment';
 import { ArrowLeftIcon } from 'react-native-heroicons/solid';
 
 export default function PaymentScreen() {
   const { confirmPayment, loading } = useConfirmPayment();
   const { initPaymentSheet, presentPaymentSheet } = usePaymentSheet();
-  const { clientSecret, paymentId, amount, mediaId } = useLocalSearchParams<{
+  const { clientSecret, paymentId, amount } = useLocalSearchParams<{
     clientSecret: string;
     paymentId: string;
     amount: string;
-    mediaId: string;
   }>();
   const router = useRouter();
   const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [showCardForm, setShowCardForm] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Initialize payment sheet for card payments
   useEffect(() => {
@@ -124,17 +125,72 @@ export default function PaymentScreen() {
       const status = await PaymentService.pollPaymentStatus(paymentId);
       
       if (status.status === 'succeeded') {
-        Alert.alert(
-          'Payment Successful',
-          'Your media has been uploaded successfully!',
-          [{ text: 'OK', onPress: () => router.replace('/(app)/home') }]
-        );
+        await uploadMediaAfterPayment();
       } else {
         Alert.alert('Payment Failed', status.failure_reason || 'Payment was not completed');
       }
     } catch (pollError) {
       console.error('Payment status polling failed:', pollError);
       Alert.alert('Payment Status', 'Payment completed but status verification failed. Please check your payment history.');
+    }
+  };
+
+  const uploadMediaAfterPayment = async () => {
+    setIsUploading(true);
+
+    try {
+      // Load form state
+      const formState = await FormStateService.loadFormState();
+      
+      if (!formState || !formState.media) {
+        Alert.alert('Error', 'Form data not found. Please try again.');
+        return;
+      }
+
+      // Create file object for upload
+      const file = {
+        uri: formState.media.uri,
+        type: formState.media.type === 'image' ? 'image/jpeg' : 'video/mp4',
+        name: formState.media.name,
+      };
+
+      // Upload media after payment
+      await PaymentService.uploadAfterPayment({
+        payment_id: paymentId,
+        file,
+        description: formState.description,
+        tags: formState.tags,
+        reward: formState.reward,
+        questions: formState.questions.map((quiz: { id: string; question: string; options: string[]; correctAnswer: number }) => ({
+          question: quiz.question,
+          answer: String.fromCharCode(65 + quiz.correctAnswer),
+          option_a: quiz.options[0],
+          option_b: quiz.options[1],
+          option_c: quiz.options[2],
+          option_d: quiz.options[3],
+        })),
+      });
+
+      // Clear form state after successful upload
+      await FormStateService.clearFormState();
+
+      Alert.alert(
+        'Success!',
+        'Your media has been uploaded successfully!',
+        [{ text: 'OK', onPress: () => router.replace('/(app)/home') }]
+      );
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      Alert.alert(
+        'Upload Failed',
+        'Payment was successful but upload failed. Please contact support.',
+        [
+          { text: 'Try Again', onPress: () => uploadMediaAfterPayment() },
+          { text: 'Go Home', onPress: () => router.replace('/(app)/home') }
+        ]
+      );
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -199,11 +255,22 @@ export default function PaymentScreen() {
           </View>
         </View>
 
+        {/* Upload Progress */}
+        {isUploading && (
+          <View className="bg-gray-800 rounded-lg p-6 mb-6">
+            <Text className="text-white text-lg font-bold mb-4">Uploading Media</Text>
+            <ActivityIndicator size="large" color="#FFFF00" />
+            <Text className="text-gray-300 mt-2 text-center">
+              Please wait while we upload your media...
+            </Text>
+          </View>
+        )}
+
         {/* Card Form */}
-        {showCardForm && renderCardForm()}
+        {showCardForm && !isUploading && renderCardForm()}
 
         {/* Payment Methods */}
-        {!showCardForm && (
+        {!showCardForm && !isUploading && (
           <>
             <Text className="text-white text-lg font-bold mb-4">Choose Payment Method</Text>
 
@@ -254,7 +321,7 @@ export default function PaymentScreen() {
         )}
 
         {/* Processing Indicator */}
-        {isProcessing && !showCardForm && (
+        {isProcessing && !showCardForm && !isUploading && (
           <View className="mt-6 items-center">
             <ActivityIndicator size="large" color="#FFFF00" />
             <Text className="text-white mt-2">Processing payment...</Text>
