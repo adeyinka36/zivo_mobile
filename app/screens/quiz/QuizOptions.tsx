@@ -22,11 +22,11 @@ export default function QuizOptions({
     // Animate options in with staggered timing and alternating directions
     const animations = options.map((_, index) => {
       const isFromRight = index % 2 === 1; // Odd indices slide from right
-      const delay = index * 200; // Stagger by 200ms
+      const delay = index * 150; // Reduced stagger to 150ms for smoother flow
       
       return Animated.timing(slideAnims[index], {
         toValue: 1,
-        duration: 600,
+        duration: 700,
         delay,
         useNativeDriver: true,
       });
@@ -77,7 +77,7 @@ export default function QuizOptions({
   };
 
   return (
-    <View className="space-y-4">
+    <View className="space-y-6">
       {options.map((option, index) => {
         const isFromRight = index % 2 === 1;
         
@@ -88,27 +88,28 @@ export default function QuizOptions({
               transform: [{
                 translateX: slideAnims[index].interpolate({
                   inputRange: [0, 1],
-                  outputRange: [isFromRight ? 100 : -100, 0],
+                  outputRange: [isFromRight ? 80 : -80, 0],
                 })
               }],
               opacity: slideAnims[index]
             }}
           >
             <TouchableOpacity
-              className={`border-2 rounded-xl p-4 flex-row items-center ${getOptionStyle(index)}`}
+              className={`border-2 rounded-xl p-2 mb-1 flex-row items-center ${getOptionStyle(index)}`}
+              style={{ height: 80 }}
               onPress={() => !isAnswered && onSelect(index)}
               activeOpacity={isAnswered ? 1 : 0.7}
               disabled={isAnswered}
             >
               {/* Option Label */}
-              <View className="w-8 h-8 rounded-full border-2 border-current items-center justify-center mr-4">
+              <View className="w-10 h-10 rounded-full border-2 border-current items-center justify-center mr-4">
                 <Text className={`font-bold ${getTextStyle(index)}`}>
                   {getOptionLabel(index)}
                 </Text>
               </View>
               
               {/* Option Text */}
-              <Text className={`flex-1 text-lg ${getTextStyle(index)}`}>
+              <Text className={`flex-1 text-lg ${getTextStyle(index)}`} numberOfLines={2}>
                 {option}
               </Text>
             </TouchableOpacity>

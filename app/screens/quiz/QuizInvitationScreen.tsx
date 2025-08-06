@@ -12,6 +12,28 @@ interface QuizInvitationScreenProps {
 export default function QuizInvitationScreen({ onAccept, onDecline }: QuizInvitationScreenProps) {
   const { quizData } = useQuiz();
 
+  // Validate quiz data structure
+  React.useEffect(() => {
+    if (!quizData) {
+      console.error('QuizInvitationScreen: No quiz data available');
+      return;
+    }
+
+    if (!quizData.reward) {
+      console.error('QuizInvitationScreen: No reward data available', {
+        quizData: quizData
+      });
+      return;
+    }
+
+    console.log('QuizInvitationScreen: Quiz data validated successfully', {
+      id: quizData.id,
+      name: quizData.name,
+      reward: quizData.reward,
+      hasQuestion: !!quizData.question
+    });
+  }, [quizData]);
+
   if (!quizData) {
     return (
       <View className="flex-1 bg-black justify-center items-center px-5">
@@ -20,23 +42,31 @@ export default function QuizInvitationScreen({ onAccept, onDecline }: QuizInvita
     );
   }
 
-  const reward = parseInt(quizData.reward) / 100; // Convert from cents to dollars
+  if (!quizData.reward) {
+    return (
+      <View className="flex-1 bg-black justify-center items-center px-5">
+        <Text className="text-red-500 text-lg text-center">No reward data available</Text>
+      </View>
+    );
+  }
+
+  const reward = parseInt(quizData.reward.toString()) / 100; // Convert from cents to dollars
 
   return (
     <View className="flex-1 bg-black px-5 justify-between">
       {/* Header with X button */}
-      {/*<View className="flex-row justify-end pt-12 pb-4">*/}
-      {/*  <TouchableOpacity onPress={onDecline} className="p-2">*/}
-      {/*    <XMarkIcon color="#FFFF00" size={24} />*/}
-      {/*  </TouchableOpacity>*/}
-      {/*</View>*/}
+      <View className="flex-row justify-end pt-12 pb-4">
+        <TouchableOpacity onPress={onDecline} className="p-2">
+          <XMarkIcon color="#FFFF00" size={24} />
+        </TouchableOpacity>
+      </View>
 
       {/* Main Content */}
       <View className="flex-1 justify-around items-center px-5">
-        {/* Quiz Icon/Emoji */}
-        <View className="mb-8">
-          <Text className="text-6xl">🎯</Text>
-        </View>
+        {/*/!* Quiz Icon/Emoji *!/*/}
+        {/*<View className="mb-8">*/}
+        {/*  <Text className="text-6xl">🎯</Text>*/}
+        {/*</View>*/}
 
         {/* Title */}
         <Text className="text-yellow-400 text-2xl font-bold text-center mb-4">
@@ -56,7 +86,7 @@ export default function QuizInvitationScreen({ onAccept, onDecline }: QuizInvita
         </View>
 
         {/* Action Buttons */}
-        <View className="w-full space-y-4 gap-2">
+        <View className="w-full space-y-4">
           <TouchableOpacity
             className="bg-yellow-400 rounded-xl py-4 items-center justify-center"
             onPress={onAccept}
@@ -66,7 +96,7 @@ export default function QuizInvitationScreen({ onAccept, onDecline }: QuizInvita
           </TouchableOpacity>
 
           <TouchableOpacity
-            className="bg-transparent border-2 border-yellow-400 rounded-xl py-4 items-center justify-center"
+            className="bg-transparent border-0 border-yellow-400 rounded-xl py-4 items-center justify-center"
             onPress={onDecline}
             activeOpacity={0.7}
           >

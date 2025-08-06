@@ -4,19 +4,19 @@ import Svg, { Circle } from 'react-native-svg';
 
 interface CircularTimerProps {
   timeLeft: number;
-  setTimeLeft: (time: number) => void;
+  setTimeLeft: React.Dispatch<React.SetStateAction<number>>;
   totalTime: number;
 }
 
 export default function CircularTimer({ timeLeft, setTimeLeft, totalTime }: CircularTimerProps) {
   const animatedValue = useRef(new Animated.Value(1)).current;
-  const radius = 40;
-  const strokeWidth = 6;
+  const radius = 30; // Reduced from 40
+  const strokeWidth = 4; // Reduced from 6
   const circumference = 2 * Math.PI * radius;
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft((prev) => {
+      setTimeLeft((prev: number) => {
         if (prev <= 1) {
           clearInterval(timer);
           return 0;
@@ -45,11 +45,11 @@ export default function CircularTimer({ timeLeft, setTimeLeft, totalTime }: Circ
   return (
     <View className="items-center">
       <View className="relative">
-        <Svg width={100} height={100}>
+        <Svg width={80} height={80}>
           {/* Background circle */}
           <Circle
-            cx={50}
-            cy={50}
+            cx={40}
+            cy={40}
             r={radius}
             stroke="#333333"
             strokeWidth={strokeWidth}
@@ -57,8 +57,8 @@ export default function CircularTimer({ timeLeft, setTimeLeft, totalTime }: Circ
           />
           {/* Progress circle */}
           <AnimatedCircle
-            cx={50}
-            cy={50}
+            cx={40}
+            cy={40}
             r={radius}
             stroke="#FFFF00"
             strokeWidth={strokeWidth}
@@ -66,12 +66,12 @@ export default function CircularTimer({ timeLeft, setTimeLeft, totalTime }: Circ
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
             strokeLinecap="round"
-            transform="rotate(-90 50 50)"
+            transform="rotate(-90 40 40)"
           />
         </Svg>
         {/* Time text */}
         <View className="absolute inset-0 justify-center items-center">
-          <Text className="text-yellow-400 text-2xl font-bold">
+          <Text className="text-yellow-400 text-xl font-bold">
             {timeLeft}s
           </Text>
         </View>

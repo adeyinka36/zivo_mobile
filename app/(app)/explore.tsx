@@ -10,7 +10,7 @@ import FullScreenMedia from '@/components/FullScreenMedia';
 import { VideoView } from 'expo-video';
 import  useOptimizedVideoPlayer  from '../hooks/useOptimizedVideoPlayer';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Media {
   id: string;

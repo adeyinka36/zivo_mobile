@@ -6,5 +6,6 @@ export type MediaWithQuestionType = {
     'url': string
     'description' : string
     'tags': string[],
+    'media_type': string,
     'question': {}
 }

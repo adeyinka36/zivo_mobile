@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { XMarkIcon } from 'react-native-heroicons/solid';
 import { VideoView } from 'expo-video';
 import { useQuiz } from '@/context/QuizContext';
@@ -20,25 +20,23 @@ export default function MediaPlayerScreen({ onCancel }: MediaPlayerScreenProps) 
     );
   }
 
-  // Debug: Log quiz data to see what we have
-  console.log('Quiz data in MediaPlayerScreen:', quizData);
+  if (!quizData.url) {
+    return (
+      <View className="flex-1 bg-black justify-center items-center">
+        <Text className="text-red-500 text-lg text-center">No media URL available</Text>
+      </View>
+    );
+  }
 
-  // Determine if it's a video based on file extension or mime type
-  const isVideo = quizData.url?.includes('.mp4') || 
-                  quizData.url?.includes('.mov') || 
-                  quizData.url?.includes('.avi') ||
-                  quizData.url?.includes('.webm') ||
-                  quizData.file_name?.includes('.mp4') ||
-                  quizData.file_name?.includes('.mov') ||
-                  quizData.file_name?.includes('.avi') ||
-                  quizData.file_name?.includes('.webm');
+  // Determine if it's a video based on media_type from backend
+  const isVideo = quizData.media_type === 'video';
 
-  // Use the optimized video player hook only for videos
-  const { player, isReady } = useOptimizedVideoPlayer({
+  // Use the exact same configuration as explore screen
+  const { player } = useOptimizedVideoPlayer({
     url: quizData.url,
-    shouldPlay: isVideo,
-    loop: false,
-    muted: false,
+    shouldPlay: true,
+    loop: true,
+    muted: true,
   });
 
   return (
@@ -54,19 +52,11 @@ export default function MediaPlayerScreen({ onCancel }: MediaPlayerScreenProps) 
         </TouchableOpacity>
       </View>
 
-      {/* Loading State for Video */}
-      {isVideo && !isReady && (
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#FFFF00" />
-          <Text className="text-yellow-400 text-lg mt-4">Loading video...</Text>
-        </View>
-      )}
-
       {/* Video Player */}
-      {isVideo && player && isReady && (
+      {isVideo && player && (
         <VideoView
+          style={{ width: '100%', height: '100%' }}
           player={player}
-          className="flex-1"
           contentFit="cover"
           nativeControls={false}
         />
@@ -79,13 +69,6 @@ export default function MediaPlayerScreen({ onCancel }: MediaPlayerScreenProps) 
           className="flex-1"
           resizeMode="contain"
         />
-      )}
-
-      {/* Fallback if no media */}
-      {!quizData.url && (
-        <View className="flex-1 justify-center items-center">
-          <Text className="text-red-500 text-lg text-center">No media URL available</Text>
-        </View>
       )}
     </View>
   );
