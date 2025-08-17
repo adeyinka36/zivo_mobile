@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeftIcon } from 'react-native-heroicons/solid';
-import PaymentService from '../services/paymentService';
+import { PaymentService } from '../../services/paymentService';
 import { PaymentHistory } from '../../types/payment';
 
 export default function PaymentHistoryScreen() {

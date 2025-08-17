@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { PlusCircleIcon, XMarkIcon } from 'react-native-heroicons/solid';
 import MediaUpload from '@/components/create/MediaUpload';
 import RewardInput from '@/components/create/RewardInput';
@@ -12,19 +13,18 @@ import { CreateFormState } from '../../types/payment';
 
 export default function CreateScreen() {
   const router = useRouter();
-  const [formState, setFormState] = useState<CreateFormState>({
-    media: null,
-    description: '',
-    tags: [],
-    reward: 100,
-    questions: [],
-  });
+  const [formState, setFormState] = useState<CreateFormState>(FormStateService.getInitialFormState());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load saved form state on mount
   useEffect(() => {
     loadSavedFormState();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadSavedFormState();
+    }, [])
+  );
 
   // Auto-save form state when it changes
   useEffect(() => {
@@ -35,6 +35,8 @@ export default function CreateScreen() {
     const savedState = await FormStateService.loadFormState();
     if (savedState) {
       setFormState(savedState);
+    } else {
+      setFormState(FormStateService.getInitialFormState());
     }
   };
 
@@ -42,8 +44,26 @@ export default function CreateScreen() {
     setFormState((prev: CreateFormState) => ({ ...prev, ...updates }));
   };
 
+  const handleClearForm = async () => {
+    Alert.alert(
+      'Clear Form',
+      'Are you sure you want to clear all form data? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: async () => {
+            const initialState = await FormStateService.resetFormState();
+            setFormState(initialState);
+            Alert.alert('Form Cleared', 'All form data has been cleared.');
+          }
+        }
+      ]
+    );
+  };
+
   const handlePayment = async () => {
-    // Validate form
     const validation = FormStateService.validateFormState(formState);
     if (!validation.isValid) {
       Alert.alert('Validation Error', validation.errors.join('\n'));
@@ -53,17 +73,9 @@ export default function CreateScreen() {
     setIsSubmitting(true);
 
     try {
-      // Convert form state to payment metadata
       const metadata = FormStateService.convertToPaymentMetadata(formState);
-
-      console.log('Creating payment intent with metadata:', metadata);
-
-      // Create payment intent with metadata only
       const paymentResult = await PaymentService.createPaymentIntent(metadata);
 
-      console.log('Payment intent result:', paymentResult);
-
-      // Navigate to payment screen
       router.push({
         pathname: '/(app)/payment',
         params: {
@@ -106,8 +118,17 @@ export default function CreateScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-black">
-      <View className="justify-between min-h-full p-4">
+    <KeyboardAwareScrollView
+      style={{ flex: 1, backgroundColor: '#000000' }}
+      contentContainerStyle={{ padding: 16 }}
+      keyboardShouldPersistTaps="handled"
+      enableOnAndroid={true}
+      enableAutomaticScroll={true}
+      extraHeight={20}
+      extraScrollHeight={20}
+      showsVerticalScrollIndicator={false}
+    >
+      <View className="justify-between min-h-full">
         {/* Media Upload Section */}
         <MediaUpload
           media={formState.media}
@@ -157,14 +178,25 @@ export default function CreateScreen() {
         {/* Payment Button */}
         <TouchableOpacity
           onPress={handlePayment}
-          className="bg-yellow-400 py-4 rounded-lg items-center"
+          className="bg-yellow-400 py-4 rounded-lg items-center mb-4"
           disabled={!formState.media || isSubmitting}
         >
           <Text className="text-black font-bold text-lg">
             {isSubmitting ? 'Creating Payment...' : 'Proceed to Payment'}
           </Text>
         </TouchableOpacity>
+
+        {/* Clear Form Button */}
+        <TouchableOpacity
+          onPress={handleClearForm}
+          className="bg-gray-600 py-3 rounded-lg items-center"
+          disabled={isSubmitting}
+        >
+          <Text className="text-white font-semibold">
+            Clear Form
+          </Text>
+        </TouchableOpacity>
       </View>
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }

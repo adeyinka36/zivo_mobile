@@ -15,7 +15,7 @@ export default {
     assetBundlePatterns: ['**/*'],
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.zivo.app',
+      bundleIdentifier: 'com.adegiwa.zivo.app',
       infoPlist: {
         NSAppTransportSecurity: {
           NSAllowsArbitraryLoads: true,

@@ -7,6 +7,7 @@ import { PaymentService } from '../../services/paymentService';
 import { FormStateService } from '../../services/formStateService';
 import type { PaymentMethod } from '../../types/payment';
 import { ArrowLeftIcon } from 'react-native-heroicons/solid';
+import SuccessModal from '../components/SuccessModal';
 
 export default function PaymentScreen() {
   const { confirmPayment, loading } = useConfirmPayment();
@@ -22,6 +23,7 @@ export default function PaymentScreen() {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [showCardForm, setShowCardForm] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Initialize payment sheet for card payments
   useEffect(() => {
@@ -174,11 +176,7 @@ export default function PaymentScreen() {
       // Clear form state after successful upload
       await FormStateService.clearFormState();
 
-      Alert.alert(
-        'Success!',
-        'Your media has been uploaded successfully!',
-        [{ text: 'OK', onPress: () => router.replace('/(app)/home') }]
-      );
+      setShowSuccessModal(true);
     } catch (error: any) {
       console.error('Upload error:', error);
       Alert.alert(
@@ -186,12 +184,17 @@ export default function PaymentScreen() {
         'Payment was successful but upload failed. Please contact support.',
         [
           { text: 'Try Again', onPress: () => uploadMediaAfterPayment() },
-          { text: 'Go Home', onPress: () => router.replace('/(app)/home') }
+          { text: 'Go to Explore', onPress: () => router.replace('/(app)/explore') }
         ]
       );
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    router.replace('/(app)/explore');
   };
 
   const formatAmount = (amount: string) => {
@@ -335,6 +338,10 @@ export default function PaymentScreen() {
           </Text>
         </View>
       </View>
+      <SuccessModal
+        visible={showSuccessModal}
+        onClose={handleSuccessModalClose}
+      />
     </View>
   );
 } 

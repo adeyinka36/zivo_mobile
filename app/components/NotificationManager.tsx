@@ -24,9 +24,9 @@ export const storePushToken = async (userId: string, pushToken: string): Promise
 
 export const getPushToken = async (userId: string) => {
     try {
-        const tokenRes = await Notifications.getExpoPushTokenAsync(
-            {projectId: "13c4d117-4774-4823-8b5b-f4ddf06d0d04"},
-        );
+        console.log('🔔 user.id from notification manager passing------>',userId);
+        const tokenRes = await Notifications.getExpoPushTokenAsync();
+        console.log('🔔 tokenRes from notification manager------>',tokenRes);
         
         await storePushToken(userId, tokenRes.data);
         return tokenRes.data;
@@ -61,9 +61,6 @@ export default function NotificationManager() {
           alert("Failed to get push token for push notification!");
           return;
         }
-
-        // const tokenRes = await Notifications.getExpoPushTokenAsync();
-        // await storePushToken(user.id, tokenRes.data);
       } else {
         alert("Must use physical device for Push Notifications");
       }

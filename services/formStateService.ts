@@ -5,6 +5,19 @@ const FORM_STATE_KEY = 'create_form_state';
 
 export class FormStateService {
   /**
+   * Get initial form state
+   */
+  static getInitialFormState(): CreateFormState {
+    return {
+      media: null,
+      description: '',
+      tags: [],
+      reward: 100,
+      questions: [],
+    };
+  }
+
+  /**
    * Save form state to AsyncStorage
    */
   static async saveFormState(state: CreateFormState): Promise<void> {
@@ -29,7 +42,7 @@ export class FormStateService {
   }
 
   /**
-   * Clear form state from AsyncStorage
+   * Clear form state from AsyncStorage and reset to initial state
    */
   static async clearFormState(): Promise<void> {
     try {
@@ -37,6 +50,16 @@ export class FormStateService {
     } catch (error) {
       console.error('Failed to clear form state:', error);
     }
+  }
+
+  /**
+   * Reset form to initial state (both in memory and storage)
+   */
+  static async resetFormState(): Promise<CreateFormState> {
+    const initialState = this.getInitialFormState();
+    await this.clearFormState();
+    await this.saveFormState(initialState);
+    return initialState;
   }
 
   /**

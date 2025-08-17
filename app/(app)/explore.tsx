@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { View, Text, FlatList, Image, TextInput, ActivityIndicator, Dimensions, TouchableOpacity, Animated, Platform } from 'react-native';
+import { View, Text, FlatList, Image, TextInput, ActivityIndicator, Dimensions, TouchableOpacity, Animated, Platform, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MagnifyingGlassIcon, EyeIcon, InformationCircleIcon, CheckCircleIcon } from 'react-native-heroicons/solid';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -26,7 +26,8 @@ interface Media {
   updated_at: string;
   has_watched: boolean;
   thumbnail: string | null;
-  user?: { name: string; username: string };
+  uploader_id: string;
+  uploader_username: string;
 }
 
 const fetchMedia = async ({ pageParam = 1, searchQuery = '' }) => {
@@ -48,6 +49,7 @@ export default function ExploreScreen() {
   const [selectedMedia, setSelectedMedia] = useState<Media | null>(null);
   const [fullScreenMedia, setFullScreenMedia] = useState<Media | null>(null);
   const [visibleIndex, setVisibleIndex] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
@@ -106,6 +108,17 @@ export default function ExploreScreen() {
     }
   };
 
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['media', debouncedSearch] });
+    } catch (error) {
+      console.error('Failed to refresh:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [queryClient, debouncedSearch]);
+
   const handleEyePress = (media: Media) => {
     setFullScreenMedia(media);
   };
@@ -124,8 +137,8 @@ export default function ExploreScreen() {
 
   const handleWatchComplete = async () => {
     if (!fullScreenMedia || !user) return;
+    if (fullScreenMedia.uploader_id === user.id) return;
     
-    // Optimistic update - update UI immediately
     const previousData = queryClient.getQueryData(['media', debouncedSearch]);
     
     queryClient.setQueryData(['media', debouncedSearch], (oldData: any) => {
@@ -176,8 +189,7 @@ export default function ExploreScreen() {
   }, []);
 
   const MediaPlayer = useCallback(({ media, index }: { media: Media; index: number }) => {
-    const isVisible = index === visibleIndex;
-    if (media.media_type === 'video' && isVisible) {
+    if (media.media_type === 'video') {
       return <VideoPlayer media={media} />;
     }
     return (
@@ -187,7 +199,7 @@ export default function ExploreScreen() {
         resizeMode="cover"
       />
     );
-  }, [visibleIndex, VideoPlayer]);
+  }, [VideoPlayer]);
 
   const renderMediaItem = useCallback(({ item, index }: { item: Media; index: number }) => {
     const heights = getResponsiveHeights();
@@ -216,13 +228,18 @@ export default function ExploreScreen() {
               <CheckCircleIcon color="#00FF00" size={Math.max(16, wp('10%'))} />
             </View>
           )}
+
+
+            <View style={{ position: 'absolute', top: 16, left: 16, zIndex: 10 }}>
+              <Text style={{ color: '#FFFF00', fontSize: Math.max(12, wp('3%')), fontWeight: 'bold' }}>Uploader: {item.uploader_username}   </Text>
+            </View>
           {selectedMedia?.id === item.id && (
             <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#000000F5', justifyContent: 'center', alignItems: 'center', zIndex: 20 }}>
               <View style={{ width: '98%', padding: 20 }}>
                 <MediaInfo
                   description={item.description}
                   reward={item.reward}
-                  uploader={item.user?.name || 'Unknown'}
+                  uploader="Unknown"
                   tags={item.tags}
                   onClose={closeMediaInfo}
                 />
@@ -294,7 +311,7 @@ export default function ExploreScreen() {
         <View style={{ flexDirection: 'row', backgroundColor: '#1c1c1c', borderRadius: 8, alignItems: 'center', paddingHorizontal: 12 }}>
           <MagnifyingGlassIcon color="#FFFF00" size={Math.max(20, wp('5%'))} />
           <TextInput
-            style={{ flex: 1, marginLeft: 8, color: '#FFFF00', fontWeight: 'bold', fontSize: Math.max(14, wp('4%')) }}
+            style={{ flex: 1, marginLeft: 8, color: '#FFFF00', fontWeight: 'bold', fontSize: Math.max(14, wp('4%')), padding: 15 }}
             placeholder="Search media..."
             placeholderTextColor="#FFFF00"
             value={searchQuery}
@@ -327,16 +344,24 @@ export default function ExploreScreen() {
           pagingEnabled={false}
           onViewableItemsChanged={handleViewableItemsChanged}
           viewabilityConfig={viewabilityConfig}
-          removeClippedSubviews={true}
-          maxToRenderPerBatch={1}
-          windowSize={3}
-          initialNumToRender={1}
+          removeClippedSubviews={false}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          initialNumToRender={5}
           getItemLayout={(data, index) => ({
             length: totalItemHeight,
             offset: totalItemHeight * index,
             index,
           })}
           contentContainerStyle={{ paddingBottom: heights.bottomInset }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={['#FFFF00']}
+              tintColor="#FFFF00"
+            />
+          }
         />
       )}
 
