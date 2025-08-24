@@ -8,13 +8,15 @@ interface ScreenWrapperProps {
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
   backgroundColor?: string;
+  isAuthScreen?: boolean;
 }
 
 export default function ScreenWrapper({ 
   children, 
   style,
   contentContainerStyle,
-  backgroundColor = '#000000'
+  backgroundColor = '#000000',
+  isAuthScreen = false
 }: ScreenWrapperProps) {
   const insets = useSafeAreaInsets();
 
@@ -23,22 +25,24 @@ export default function ScreenWrapper({
       style={[{ flex: 1 }, style]}
       contentContainerStyle={[{
         flexGrow: 1,
-        justifyContent: 'center',
+        justifyContent: isAuthScreen ? 'center' : 'flex-start',
+        alignItems: 'center',
         padding: wp('4%'),
         paddingBottom: Math.max(
-          Platform.OS === 'ios' ? hp('10%') : hp('5%'),
-          insets.bottom + hp('2%')
+          Platform.OS === 'ios' ? hp('15%') : hp('10%'),
+          insets.bottom + hp('5%')
         ),
         backgroundColor: backgroundColor,
       }, contentContainerStyle]}
       keyboardShouldPersistTaps="handled"
       enableOnAndroid={true}
       enableAutomaticScroll={true}
-      extraHeight={20}
-      extraScrollHeight={Platform.OS === 'ios' ? hp('10%') : hp('5%')}
+      extraHeight={Platform.OS === 'ios' ? 120 : 80}
+      extraScrollHeight={Platform.OS === 'ios' ? 120 : 80}
       showsVerticalScrollIndicator={false}
       keyboardOpeningTime={0}
-      keyboardDismissMode="on-drag"
+      keyboardDismissMode="none"
+      enableResetScrollToCoords={false}
     >
       {children}
     </KeyboardAwareScrollView>

@@ -4,7 +4,7 @@ import { Text, View, Image, TextInput, TouchableOpacity, ActivityIndicator } fro
 import { useForm, Controller } from 'react-hook-form';
 import { router } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import ScreenWrapper from '@/components/ScreenWrapper';
 
@@ -71,7 +71,7 @@ export default function Register() {
   };
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper isAuthScreen={true}>
       {/* Logo */}
       <View className="items-center mb-3">
         <Image

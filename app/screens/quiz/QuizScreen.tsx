@@ -28,18 +28,6 @@ export default function QuizScreen({ onComplete }: QuizScreenProps) {
       return;
     }
 
-    const {
-      question,
-      option_a,
-      option_b,
-      option_c,
-      option_d,
-      answer,
-    } = quizData.question;
-
-    if (!question || !option_a || !option_b || !option_c || !option_d || !answer) {
-      console.error('QuizScreen: Missing essential question fields', quizData.question);
-    }
   }, [quizData]);
 
   useEffect(() => {
@@ -93,6 +81,8 @@ export default function QuizScreen({ onComplete }: QuizScreenProps) {
       correctOption: getOptionText(getCorrectAnswerIndex(correctAnswer)),
     });
 
+    onComplete(isCorrect);
+
     setTimeout(() => {
       router.push({
         pathname: '/(app)/quiz-result',
@@ -106,7 +96,7 @@ export default function QuizScreen({ onComplete }: QuizScreenProps) {
     }, 2000);
   };
 
-  const getCorrectAnswerIndex = (correctAnswer: string): number => {
+  const getCorrectAnswerIndex = (correctAnswer: string|undefined): number => {
     const answerMap = { A: 0, B: 1, C: 2, D: 3 };
     return answerMap[correctAnswer as keyof typeof answerMap] ?? 0;
   };

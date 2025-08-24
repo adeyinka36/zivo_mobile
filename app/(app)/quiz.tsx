@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useQuiz } from '@/context/QuizContext';
+import { api } from '@/context/auth';
 import QuizScreen from '@/screens/quiz/QuizScreen';
 
 export default function QuizRoute() {
@@ -16,9 +17,20 @@ export default function QuizRoute() {
     }
   }, [quizData, router]);
 
-  const handleQuizComplete = (correct: boolean) => {
+  const handleQuizComplete = async (correct: boolean) => {
     setIsCorrect(correct);
     setShowResult(true);
+    
+    try {
+      if (quizData?.question?.id) {
+        await api.post('/quiz/result', {
+          is_correct: correct,
+          question_id: quizData.question.id
+        });
+      }
+    } catch (error: any) {
+      console.error('Failed to send quiz result:', error);
+    }
     
     // Log the result
     console.log('Quiz completed:', {

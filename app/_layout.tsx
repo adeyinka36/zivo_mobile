@@ -23,13 +23,10 @@ function RootLayoutNav() {
   const segments = useSegments();
 
   useEffect(() => {
-    console.log('---------->',isAuthenticated, user);
     if (!isLoading) {
-      // If not authenticated and trying to access app routes, redirect to login
       if (!isAuthenticated && (pathname.startsWith('/(app)') || pathname === '/')) {
         router.replace('/(auth)/login');
       }
-      // If authenticated and trying to access auth routes, redirect to home
       else if (isAuthenticated && pathname.startsWith('/(auth)')) {
         router.replace('/(app)/home');
       }
@@ -63,9 +60,28 @@ function RootLayoutNav() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }} edges={['top', 'right', 'left', 'bottom']}>
       {showHeader && <Header />}
-      <Stack>
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(app)" options={{ headerShown: false }} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: '#000000' },
+          animation: 'slide_from_right',
+          animationDuration: 200,
+        }}
+      >
+        <Stack.Screen 
+          name="(auth)" 
+          options={{ 
+            headerShown: false,
+            contentStyle: { backgroundColor: '#000000' }
+          }} 
+        />
+        <Stack.Screen 
+          name="(app)" 
+          options={{ 
+            headerShown: false,
+            contentStyle: { backgroundColor: '#000000' }
+          }} 
+        />
       </Stack>
     </SafeAreaView>
   );

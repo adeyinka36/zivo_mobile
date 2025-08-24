@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useState } from 'react';
 import { Text, View, Image, TextInput, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
-import { Link, useRouter } from 'expo-router';
+import { router, useRouter, Link } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
-import { useAuth } from '../hooks/useAuth';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { useAuth } from '@/hooks/useAuth';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import ScreenWrapper from '@/components/ScreenWrapper';
 import LoadingScreen from '@/components/LoadingScreen';
 
 export default function ResetPassword() {
@@ -40,23 +41,7 @@ export default function ResetPassword() {
   };
 
   return (
-    <KeyboardAwareScrollView
-      style={{ flex: 1, backgroundColor: '#000000' }}
-      contentContainerStyle={{
-        flexGrow: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: wp('4%'),
-        paddingBottom: Platform.OS === 'ios' ? hp('10%') : hp('5%'),
-      }}
-      enableOnAndroid
-      enableAutomaticScroll
-      keyboardShouldPersistTaps="handled"
-      extraScrollHeight={Platform.OS === 'ios' ? hp('10%') : hp('5%')}
-      showsVerticalScrollIndicator={false}
-      keyboardOpeningTime={0}
-      keyboardDismissMode="on-drag"
-    >
+    <ScreenWrapper isAuthScreen={true}>
       {/* Loading Screen */}
       {(isLoading || isSubmitting) && <LoadingScreen />}
 
@@ -150,7 +135,7 @@ export default function ResetPassword() {
           Back to Login
         </Link>
       </Text>
-    </KeyboardAwareScrollView>
+    </ScreenWrapper>
   );
 }
 

@@ -10,12 +10,18 @@ export default {
     splash: {
       image: './assets/images/icon.png',
       resizeMode: 'contain',
-      backgroundColor: '#000000'
+      backgroundColor: '#000000',
+      dark: {
+        image: './assets/images/icon.png',
+        resizeMode: 'contain',
+        backgroundColor: '#000000'
+      }
     },
     assetBundlePatterns: ['**/*'],
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.adegiwa.zivo.app',
+      backgroundColor: '#000000',
       infoPlist: {
         NSAppTransportSecurity: {
           NSAllowsArbitraryLoads: true,
@@ -26,6 +32,8 @@ export default {
             },
           },
         },
+        UIStatusBarStyle: 'light-content',
+        UIViewControllerBasedStatusBarAppearance: false,
       },
       config: {
         usesNonExemptEncryption: false
@@ -40,7 +48,12 @@ export default {
       edgeToEdgeEnabled: true,
       usesCleartextTraffic: true,
       permissions: ['android.permission.INTERNET'],
-      googleServicesFile: "./google-services.json"
+      googleServicesFile: "./google-services.json",
+      backgroundColor: '#000000',
+      statusBar: {
+        backgroundColor: '#000000',
+        barStyle: 'light-content'
+      }
     },
     web: {
       favicon: './assets/images/logo.png',

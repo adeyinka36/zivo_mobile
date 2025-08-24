@@ -189,7 +189,7 @@ export default function CreateScreen() {
         {/* Clear Form Button */}
         <TouchableOpacity
           onPress={handleClearForm}
-          className="bg-gray-600 py-3 rounded-lg items-center"
+          className="bg-gray-600 py-3 rounded-lg items-center mb-3"
           disabled={isSubmitting}
         >
           <Text className="text-white font-semibold">

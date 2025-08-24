@@ -11,6 +11,7 @@ import { VideoView } from 'expo-video';
 import  useOptimizedVideoPlayer  from '../hooks/useOptimizedVideoPlayer';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/hooks/useAuth';
+import { useEventListener } from 'expo';
 
 interface Media {
   id: string;
@@ -28,6 +29,7 @@ interface Media {
   thumbnail: string | null;
   uploader_id: string;
   uploader_username: string;
+  view_count: number;
 }
 
 const fetchMedia = async ({ pageParam = 1, searchQuery = '' }) => {
@@ -50,6 +52,7 @@ export default function ExploreScreen() {
   const [fullScreenMedia, setFullScreenMedia] = useState<Media | null>(null);
   const [visibleIndex, setVisibleIndex] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
@@ -102,6 +105,23 @@ export default function ExploreScreen() {
     initialPageParam: 1,
   });
 
+  useEffect(() => {
+    const allMedia = data?.pages?.flatMap((page) => page?.data || []) || [];
+    const currentMedia = allMedia[visibleIndex];
+    if (currentMedia?.media_type === 'video' && visibleIndex >= 0) {
+      setCurrentVideoUrl(currentMedia.url);
+    } else {
+      setCurrentVideoUrl(null);
+    }
+  }, [visibleIndex, data]);
+
+  const { player } = useOptimizedVideoPlayer({
+    url: currentVideoUrl || '',
+    shouldPlay: !!currentVideoUrl,
+    loop: true,
+    muted: true,
+  });
+
   const handleLoadMore = () => {
     if (hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
@@ -121,6 +141,7 @@ export default function ExploreScreen() {
 
   const handleEyePress = (media: Media) => {
     setFullScreenMedia(media);
+    setVisibleIndex(-1);
   };
 
   const handleInfoPress = (media: Media) => {
@@ -133,6 +154,7 @@ export default function ExploreScreen() {
 
   const closeFullScreen = () => {
     setFullScreenMedia(null);
+    setVisibleIndex(0);
   };
 
   const handleWatchComplete = async () => {
@@ -170,13 +192,29 @@ export default function ExploreScreen() {
     return description.substring(0, 25) + '...';
   };
 
-  const VideoPlayer = useCallback(({ media }: { media: Media }) => {
-    const { player } = useOptimizedVideoPlayer({
-      url: media.url,
-      shouldPlay: true,
-      loop: true,
-      muted: true,
-    });
+  const VideoPlayer = useCallback(({ media, index }: { media: Media; index: number }) => {
+    const isVisible = visibleIndex === index;
+    const isVideo = media.media_type === 'video';
+
+    if (!isVideo) {
+      return (
+        <Image
+          source={{ uri: media.thumbnail || media.url }}
+          style={{ width: '100%', height: '100%' }}
+          resizeMode="cover"
+        />
+      );
+    }
+
+    if (!isVisible) {
+      return (
+        <Image
+          source={{ uri: media.thumbnail || media.url }}
+          style={{ width: '100%', height: '100%' }}
+          resizeMode="cover"
+        />
+      );
+    }
 
     return (
       <VideoView
@@ -186,11 +224,11 @@ export default function ExploreScreen() {
         nativeControls={false}
       />
     );
-  }, []);
+  }, [visibleIndex, player]);
 
   const MediaPlayer = useCallback(({ media, index }: { media: Media; index: number }) => {
     if (media.media_type === 'video') {
-      return <VideoPlayer media={media} />;
+      return <VideoPlayer media={media} index={index} />;
     }
     return (
       <Image
@@ -241,6 +279,7 @@ export default function ExploreScreen() {
                   reward={item.reward}
                   uploader="Unknown"
                   tags={item.tags}
+                  view_count={item.view_count}
                   onClose={closeMediaInfo}
                 />
               </View>
@@ -306,8 +345,8 @@ export default function ExploreScreen() {
   const totalItemHeight = heights.availableHeight + heights.infoSectionHeight;
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#000' }}>
-      <View style={{ height: heights.searchBarHeight, paddingHorizontal: 16, justifyContent: 'center' }}>
+    <View style={{ flex: 1, backgroundColor: '#000000' }}>
+      <View style={{ height: heights.searchBarHeight, paddingHorizontal: 16, justifyContent: 'center', backgroundColor: '#000000' }}>
         <View style={{ flexDirection: 'row', backgroundColor: '#1c1c1c', borderRadius: 8, alignItems: 'center', paddingHorizontal: 12 }}>
           <MagnifyingGlassIcon color="#FFFF00" size={Math.max(20, wp('5%'))} />
           <TextInput
@@ -321,11 +360,11 @@ export default function ExploreScreen() {
       </View>
 
       {isLoading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000000' }}>
           <ActivityIndicator color="#FFFF00" size="large" />
         </View>
       ) : isError ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000000' }}>
           <Text style={{ color: 'red', fontSize: Math.max(14, wp('4%')) }}>Error loading media. Please try again.</Text>
         </View>
       ) : (
@@ -335,7 +374,7 @@ export default function ExploreScreen() {
           renderItem={renderMediaItem}
           keyExtractor={keyExtractor}
           onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
+          onEndReachedThreshold={0.1}
           ListFooterComponent={renderFooter}
           showsVerticalScrollIndicator={false}
           snapToInterval={totalItemHeight}
@@ -345,15 +384,15 @@ export default function ExploreScreen() {
           onViewableItemsChanged={handleViewableItemsChanged}
           viewabilityConfig={viewabilityConfig}
           removeClippedSubviews={false}
-          maxToRenderPerBatch={10}
-          windowSize={10}
-          initialNumToRender={5}
+          maxToRenderPerBatch={1}
+          initialNumToRender={1}
+          style={{ backgroundColor: '#000000' }}
           getItemLayout={(data, index) => ({
             length: totalItemHeight,
             offset: totalItemHeight * index,
             index,
           })}
-          contentContainerStyle={{ paddingBottom: heights.bottomInset }}
+          contentContainerStyle={{ paddingBottom: heights.bottomInset, backgroundColor: '#000000' }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -373,6 +412,8 @@ export default function ExploreScreen() {
             media_type: fullScreenMedia.media_type as 'image' | 'video',
             description: fullScreenMedia.description,
             has_watched: fullScreenMedia.has_watched,
+            uploader_id: fullScreenMedia.uploader_id,
+            user_id: user?.id
           }}
           onClose={closeFullScreen}
           onWatchComplete={handleWatchComplete}

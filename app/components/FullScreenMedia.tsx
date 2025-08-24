@@ -2,7 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Image, TouchableOpacity, StyleSheet, Dimensions, Text, Animated } from 'react-native';
 import { XMarkIcon, CheckCircleIcon } from 'react-native-heroicons/solid';
 import { VideoView } from 'expo-video';
-import  useOptimizedVideoPlayer  from '../hooks/useOptimizedVideoPlayer';
+import useOptimizedVideoPlayer from '../hooks/useOptimizedVideoPlayer';
+import { useEventListener } from 'expo';
 
 const { width, height } = Dimensions.get('window');
 
@@ -12,6 +13,8 @@ interface FullScreenMediaProps {
     media_type: 'image' | 'video';
     description?: string;
     has_watched?: boolean;
+    uploader_id?: string;
+    user_id?: string; // Assuming this is the ID of the user who uploaded the media
   };
   onClose: () => void;
   onWatchComplete: () => void;
@@ -58,9 +61,16 @@ export default function FullScreenMedia({ media, onClose, onWatchComplete }: Ful
     shouldPlay: media.media_type === 'video',
     loop: false,
     muted: false,
-    onEnd: showCompletionAnimation,
-    
   });
+
+  if(player) {
+    useEventListener(player, 'statusChange', ({ status, error }) => {
+      console.log('FullScreen Player status changed: ', status);
+      if(status === 'idle' && !media.has_watched  && media.uploader_id !== media.user_id) {
+        showCompletionAnimation();
+      }
+    });
+  }
 
   return (
     <View style={styles.container}>
@@ -135,8 +145,8 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: 40,
-    right: 20,
+    top: 50,
+    right: 30,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     borderRadius: 20,
     padding: 8,
@@ -144,7 +154,7 @@ const styles = StyleSheet.create({
   },
   timerContainer: {
     position: 'absolute',
-    top: 40,
+    top: 50,
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -163,7 +173,7 @@ const styles = StyleSheet.create({
   },
   completionContainer: {
     position: 'absolute',
-    top: 40,
+    top: 50,
     left: 0,
     right: 0,
     alignItems: 'center',

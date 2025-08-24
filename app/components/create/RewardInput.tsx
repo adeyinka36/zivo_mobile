@@ -11,10 +11,11 @@ interface RewardInputProps {
 export default function RewardInput({ value, onChange, className = '' }: RewardInputProps) {
   const PLATFORM_FEE_PERCENTAGE = 10;
   const INCREMENT_AMOUNT = 50; // 50 cents
+  const MINIMUM_REWARD = 500; // $5.00 minimum
 
   const handleChange = (text: string) => {
     const newValue = parseInt(text) || 0;
-    if (newValue >= 100) {
+    if (newValue >= MINIMUM_REWARD) {
       onChange(newValue);
     }
   };
@@ -25,7 +26,7 @@ export default function RewardInput({ value, onChange, className = '' }: RewardI
 
   const decrementReward = () => {
     const newValue = value - INCREMENT_AMOUNT;
-    if (newValue >= 100) {
+    if (newValue >= MINIMUM_REWARD) {
       onChange(newValue);
     }
   };
@@ -43,9 +44,9 @@ export default function RewardInput({ value, onChange, className = '' }: RewardI
           <TouchableOpacity
             onPress={decrementReward}
             className="bg-gray-700 p-3 rounded-lg"
-            disabled={value <= 100}
+            disabled={value <= MINIMUM_REWARD}
           >
-            <MinusIcon color={value <= 100 ? "#666666" : "#FFFF00"} size={24} />
+            <MinusIcon color={value <= MINIMUM_REWARD ? "#666666" : "#FFFF00"} size={24} />
           </TouchableOpacity>
 
           <View className="flex-1 mx-4">
@@ -61,7 +62,7 @@ export default function RewardInput({ value, onChange, className = '' }: RewardI
               />
             </View>
             <Text className="text-gray-400 text-sm mt-1">
-              Minimum reward: $1.00 (100 cents)
+              Minimum reward: $5.00 (500 cents)
             </Text>
           </View>
 

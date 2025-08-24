@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useStripe, useConfirmPayment, usePaymentSheet } from '@stripe/stripe-react-native';
 import { useAuth } from '@/hooks/useAuth';
@@ -277,35 +277,38 @@ export default function PaymentScreen() {
           <>
             <Text className="text-white text-lg font-bold mb-4">Choose Payment Method</Text>
 
-            {/* Apple Pay */}
-            <TouchableOpacity
-              onPress={() => handlePayment('ApplePay')}
-              disabled={loading || isProcessing}
-              className="bg-black border border-gray-600 rounded-lg p-4 mb-4 items-center"
-              activeOpacity={0.7}
-            >
-              {isProcessing && selectedMethod === 'ApplePay' ? (
-                <ActivityIndicator color="#FFFF00" />
-              ) : (
-                <Text className="text-white font-semibold">Apple Pay</Text>
-              )}
-            </TouchableOpacity>
+            {/* Platform-specific payment options */}
+            {Platform.OS === 'ios' && (
+              <TouchableOpacity
+                onPress={() => handlePayment('ApplePay')}
+                disabled={loading || isProcessing}
+                className="bg-black border border-gray-600 rounded-lg p-4 mb-4 items-center"
+                activeOpacity={0.7}
+              >
+                {isProcessing && selectedMethod === 'ApplePay' ? (
+                  <ActivityIndicator color="#FFFF00" />
+                ) : (
+                  <Text className="text-white font-semibold">Apple Pay</Text>
+                )}
+              </TouchableOpacity>
+            )}
 
-            {/* Google Pay */}
-            <TouchableOpacity
-              onPress={() => handlePayment('GooglePay')}
-              disabled={loading || isProcessing}
-              className="bg-black border border-gray-600 rounded-lg p-4 mb-4 items-center"
-              activeOpacity={0.7}
-            >
-              {isProcessing && selectedMethod === 'GooglePay' ? (
-                <ActivityIndicator color="#FFFF00" />
-              ) : (
-                <Text className="text-white font-semibold">Google Pay</Text>
-              )}
-            </TouchableOpacity>
+            {Platform.OS === 'android' && (
+              <TouchableOpacity
+                onPress={() => handlePayment('GooglePay')}
+                disabled={loading || isProcessing}
+                className="bg-black border border-gray-600 rounded-lg p-4 mb-4 items-center"
+                activeOpacity={0.7}
+              >
+                {isProcessing && selectedMethod === 'GooglePay' ? (
+                  <ActivityIndicator color="#FFFF00" />
+                ) : (
+                  <Text className="text-white font-semibold">Google Pay</Text>
+                )}
+              </TouchableOpacity>
+            )}
 
-            {/* Card Payment */}
+            {/* Card Payment - always available */}
             <TouchableOpacity
               onPress={() => handlePayment('Card')}
               disabled={loading || isProcessing}

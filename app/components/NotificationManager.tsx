@@ -3,7 +3,7 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
 import { usePathname, useRouter } from "expo-router";
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import useNotification  from "@/context/NotificationContext";
 import { api } from "@/context/auth";
 import { useQuiz } from "@/context/QuizContext";
