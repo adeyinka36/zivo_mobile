@@ -25,6 +25,7 @@ export default function FullScreenMedia({ media, onClose, onWatchComplete }: Ful
   const [showCompletion, setShowCompletion] = useState(media.has_watched || false);
   const fadeAnim = useRef(new Animated.Value(media.has_watched ? 1 : 0)).current;
   const timerRef = useRef<number | null>(null);
+  const [mediaEnded, setMediaEnded] = useState(false);
 
   // Handle completion animation
   const showCompletionAnimation = () => {
@@ -63,14 +64,18 @@ export default function FullScreenMedia({ media, onClose, onWatchComplete }: Ful
     muted: false,
   });
 
-  if(player) {
-    useEventListener(player, 'statusChange', ({ status, error }) => {
-      console.log('FullScreen Player status changed: ', status);
-      if(status === 'idle' && !media.has_watched  && media.uploader_id !== media.user_id) {
-        showCompletionAnimation();
-      }
-    });
-  }
+  useEventListener(player, 'playToEnd', () => {
+    setMediaEnded(true);
+  });
+
+
+  useEffect(() => {
+    console.log('Video player initialized:', player);
+    if (mediaEnded) {
+      showCompletionAnimation();
+    }
+  }, [mediaEnded]);
+
 
   return (
     <View style={styles.container}>
@@ -82,6 +87,7 @@ export default function FullScreenMedia({ media, onClose, onWatchComplete }: Ful
             contentFit="contain"
             nativeControls={true}
             allowsFullscreen={true}
+            requiresLinearPlayback={true}
           />
         ) : (
           <Image

@@ -12,7 +12,7 @@ export class FormStateService {
       media: null,
       description: '',
       tags: [],
-      reward: 100,
+      reward: 500,
       questions: [],
     };
   }
@@ -72,8 +72,8 @@ export class FormStateService {
       errors.push('Please upload a media file');
     }
 
-    if (state.reward < 100) {
-      errors.push('Reward must be at least $1.00');
+    if (state.reward < 500) {
+      errors.push('Reward must be at least $5.00');
     }
 
     if (state.description.length > 1000) {

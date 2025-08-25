@@ -25,7 +25,7 @@ export default function QuizRoute() {
       if (quizData?.question?.id) {
         await api.post('/quiz/result', {
           is_correct: correct,
-          question_id: quizData.question.id
+          media_id: quizData.id,
         });
       }
     } catch (error: any) {

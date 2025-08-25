@@ -22,13 +22,6 @@ export default function QuizScreen({ onComplete }: QuizScreenProps) {
   const timerSlideAnim = useRef(new Animated.Value(0)).current;
   const optionsSlideAnim = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    if (!quizData || !quizData.question) {
-      console.error('QuizScreen: Invalid quiz data', quizData);
-      return;
-    }
-
-  }, [quizData]);
 
   useEffect(() => {
     Animated.sequence([

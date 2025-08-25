@@ -24,9 +24,7 @@ export const storePushToken = async (userId: string, pushToken: string): Promise
 
 export const getPushToken = async (userId: string) => {
     try {
-        console.log('🔔 user.id from notification manager passing------>',userId);
         const tokenRes = await Notifications.getExpoPushTokenAsync();
-        console.log('🔔 tokenRes from notification manager------>',tokenRes);
         
         await storePushToken(userId, tokenRes.data);
         return tokenRes.data;

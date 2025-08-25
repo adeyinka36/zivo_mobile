@@ -7,7 +7,7 @@ export type MediaWithQuestionType = {
     'description' : string
     'tags': string[],
     'media_type': string,
-    'question': QuestionType,
+    'question': QuestionType | null,
 }
 
 type QuestionType = {
