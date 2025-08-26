@@ -32,12 +32,6 @@ export default function QuizRoute() {
       console.error('Failed to send quiz result:', error);
     }
     
-    // Log the result
-    console.log('Quiz completed:', {
-      isCorrect: correct,
-      quizData: quizData
-    });
-    
     // Navigate to result after a delay
     setTimeout(() => {
       router.push({

@@ -7,9 +7,10 @@ import useOptimizedVideoPlayer from '@/hooks/useOptimizedVideoPlayer';
 
 interface MediaPlayerScreenProps {
   onCancel: () => void;
+  muted?: boolean
 }
 
-export default function MediaPlayerScreen({ onCancel }: MediaPlayerScreenProps) {
+export default function MediaPlayerScreen({ onCancel, muted }: MediaPlayerScreenProps) {
   const { quizData } = useQuiz();
 
   if (!quizData) {
@@ -36,7 +37,7 @@ export default function MediaPlayerScreen({ onCancel }: MediaPlayerScreenProps) 
     url: quizData.url,
     shouldPlay: true,
     loop: true,
-    muted: true,
+    muted: muted ? muted : false,
   });
 
   return (

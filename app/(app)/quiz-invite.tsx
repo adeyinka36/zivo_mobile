@@ -19,12 +19,10 @@ export default function QuizInviteScreen() {
   }, [quizData, router]);
 
   const handleAccept = () => {
-    console.log('Player accepted quiz:', quizData);
     setShowMediaPlayer(true);
   };
 
   const handleDecline = () => {
-    console.log('Player declined quiz:', quizData);
     clearQuiz();
     router.replace('/(app)/home');
   };
@@ -48,7 +46,7 @@ export default function QuizInviteScreen() {
 
   // Show media player if user accepted
   if (showMediaPlayer) {
-    return <MediaPlayerScreen onCancel={endMediaStartQuiz} />;
+    return <MediaPlayerScreen onCancel={endMediaStartQuiz} muted={false} />;
   }
 
   // Show invitation screen (always show this first)

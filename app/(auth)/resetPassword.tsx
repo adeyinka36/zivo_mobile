@@ -29,7 +29,6 @@ export default function ResetPassword() {
       setSuccessMessage(message);
       // Use setTimeout to ensure the success message is shown before navigation
       setTimeout(() => {
-        console.log('Navigating to new password page with email:', data.email);
         router.replace('/newPassword?email=' + encodeURIComponent(data.email));
       }, 1000);
     } catch (e: any) {

@@ -25,13 +25,6 @@ export default function QuizInvitationScreen({ onAccept, onDecline }: QuizInvita
       });
       return;
     }
-
-    console.log('QuizInvitationScreen: Quiz data validated successfully', {
-      id: quizData.id,
-      name: quizData.name,
-      reward: quizData.reward,
-      hasQuestion: !!quizData.question
-    });
   }, [quizData]);
 
   if (!quizData) {

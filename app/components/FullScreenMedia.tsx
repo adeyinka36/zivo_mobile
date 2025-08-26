@@ -70,7 +70,6 @@ export default function FullScreenMedia({ media, onClose, onWatchComplete }: Ful
 
 
   useEffect(() => {
-    console.log('Video player initialized:', player);
     if (mediaEnded) {
       showCompletionAnimation();
     }

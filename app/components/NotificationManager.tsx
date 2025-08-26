@@ -94,7 +94,6 @@ export default function NotificationManager() {
       const data = notification.request.content.data;
       if(data.type === 'quiz_invitation') {
         setQuizData(data.media as MediaWithQuestionType);
-        console.log('🔔 quiz invitation recieved------>',data);
         router.replace('/(app)/quiz-invite');
        }
     });
@@ -111,7 +110,6 @@ export default function NotificationManager() {
       const data = response.notification.request.content.data;
       if(data.type === 'quiz_invitation') {
        setQuizData(data.media as MediaWithQuestionType);
-       console.log('🔔 Here is------',quizData);
        router.replace('/(app)/quiz-invite');
       }
        

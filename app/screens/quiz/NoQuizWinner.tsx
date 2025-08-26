@@ -20,7 +20,7 @@ export default function NoQuizWinner() {
 
   useEffect(() => {
     try {
-        if (quizData?.question?.id) {
+        if (quizData?.id) {
           api.post('/quiz/result', {
             is_correct: true,
             media_id: quizData.id,
@@ -34,7 +34,7 @@ export default function NoQuizWinner() {
         clearQuiz();
         router.replace('/(app)/home');
       }
-}, []);
+}, [quizData]);
 
   return (
     <View className="flex-1 bg-black items-center justify-center px-6">

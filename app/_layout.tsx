@@ -36,8 +36,6 @@ function RootLayoutNav() {
   // Handle deep links
   useEffect(() => {
     const handleDeepLink = (url: string) => {
-      console.log('Deep link received:', url);
-      // Handle deep link navigation here
       if (url.includes('quiz')) {
         router.push('/(app)/explore');
       }

@@ -64,15 +64,6 @@ export default function QuizScreen({ onComplete }: QuizScreenProps) {
     const correctAnswer = quizData?.question?.answer;
     const isCorrect = answerIndex === getCorrectAnswerIndex(correctAnswer);
 
-    console.log('Quiz Answer:', {
-      selected: answerIndex,
-      correct: getCorrectAnswerIndex(correctAnswer),
-      isCorrect,
-      isTimeExpired: isExpired,
-      question: quizData?.question?.question,
-      selectedOption: answerIndex !== null ? getOptionText(answerIndex) : 'No answer',
-      correctOption: getOptionText(getCorrectAnswerIndex(correctAnswer)),
-    });
 
     onComplete(isCorrect);
 
