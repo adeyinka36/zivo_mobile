@@ -11,7 +11,13 @@ export default function QuizResultScreen() {
   const correctAnswer = parseInt(params.correctAnswer as string) || 0;
   const isTimeExpired = params.isTimeExpired === 'true';
 
-  // Render the appropriate screen based on the result
+  console.log('params from results screen----', {
+    isCorrect: isCorrect.toString(),
+    selectedAnswer: selectedAnswer.toString(),
+    correctAnswer: correctAnswer.toString(),
+    isTimeExpired: isTimeExpired.toString(),
+  },)
+
   if (isCorrect) {
     return (
       <CorrectAnswerScreen 

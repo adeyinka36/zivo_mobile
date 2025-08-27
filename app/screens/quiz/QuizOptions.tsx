@@ -19,10 +19,9 @@ export default function QuizOptions({
   const slideAnims = useRef(options.map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
-    // Animate options in with staggered timing and alternating directions
     const animations = options.map((_, index) => {
-      const isFromRight = index % 2 === 1; // Odd indices slide from right
-      const delay = index * 150; // Reduced stagger to 150ms for smoother flow
+      const isFromRight = index % 2 === 0;
+      const delay = index * 150;
       
       return Animated.timing(slideAnims[index], {
         toValue: 1,
@@ -32,7 +31,6 @@ export default function QuizOptions({
       });
     });
 
-    // Start all animations
     Animated.parallel(animations).start();
   }, []);
 
@@ -43,16 +41,15 @@ export default function QuizOptions({
         : "bg-transparent border-gray-600";
     }
     
-    // After answering, show correct/incorrect states
     if (index === correctAnswer) {
-      return "bg-green-500 border-green-500"; // Correct answer
+      return "bg-green-500 border-green-500";
     }
     
     if (selectedAnswer === index && index !== correctAnswer) {
-      return "bg-red-500 border-red-500"; // Wrong selected answer
+      return "bg-red-500 border-red-500";
     }
     
-    return "bg-transparent border-gray-600"; // Unselected options
+    return "bg-transparent border-gray-600";
   };
 
   const getTextStyle = (index: number) => {
@@ -61,14 +58,14 @@ export default function QuizOptions({
     }
     
     if (index === correctAnswer) {
-      return "text-white"; // Correct answer
+      return "text-white";
     }
     
     if (selectedAnswer === index && index !== correctAnswer) {
-      return "text-white"; // Wrong selected answer
+      return "text-white";
     }
     
-    return "text-gray-400"; // Unselected options
+    return "text-gray-400";
   };
 
   const getOptionLabel = (index: number) => {
@@ -79,7 +76,7 @@ export default function QuizOptions({
   return (
     <View className="space-y-6">
       {options.map((option, index) => {
-        const isFromRight = index % 2 === 1;
+        const isFromRight = index % 2 === 0;
         
         return (
           <Animated.View
@@ -101,14 +98,12 @@ export default function QuizOptions({
               activeOpacity={isAnswered ? 1 : 0.7}
               disabled={isAnswered}
             >
-              {/* Option Label */}
               <View className="w-10 h-10 rounded-full border-2 border-current items-center justify-center mr-4">
                 <Text className={`font-bold ${getTextStyle(index)}`}>
                   {getOptionLabel(index)}
                 </Text>
               </View>
               
-              {/* Option Text */}
               <Text className={`flex-1 text-lg ${getTextStyle(index)}`} numberOfLines={2}>
                 {option}
               </Text>

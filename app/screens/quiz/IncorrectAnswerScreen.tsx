@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Animated } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { XMarkIcon, XCircleIcon } from 'react-native-heroicons/solid';
@@ -13,13 +13,13 @@ export default function IncorrectAnswerScreen({ selectedAnswer, correctAnswer }:
   const router = useRouter();
   const { clearQuiz } = useQuiz();
   const params = useLocalSearchParams();
-  const [fadeAnim] = useState(new Animated.Value(0));
-  const [slideAnim] = useState(new Animated.Value(50));
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const isNavigating = useRef(false);
 
   const isTimeExpired = params.isTimeExpired === 'true';
 
   useEffect(() => {
-    // Animate in the result screen
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -32,41 +32,40 @@ export default function IncorrectAnswerScreen({ selectedAnswer, correctAnswer }:
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [fadeAnim, slideAnim]);
 
-  const handleGoHome = () => {
+  const handleGoHome = useCallback(() => {
+    if (isNavigating.current) return;
+    isNavigating.current = true;
+    
     clearQuiz();
     router.replace('/(app)/home');
-  };
+  }, [clearQuiz, router]);
 
-  const getAnswerDetails = () => {
+  const getAnswerDetails = useCallback(() => {
     if (isTimeExpired) {
       return 'You ran out of time!';
     }
     
     const options = ['A', 'B', 'C', 'D'];
-    const selected = options[selectedAnswer] || 'None';
     const correct = options[correctAnswer] || 'Unknown';
-    
     return `Correct answer: ${correct}`;
-  };
+  }, [isTimeExpired, correctAnswer]);
 
-  const getFailureMessage = () => {
+  const getFailureMessage = useCallback(() => {
     return isTimeExpired
       ? 'You ran out of time! Try to answer faster next time.'
       : 'You selected the wrong answer. Keep learning and try again!';
-  };
+  }, [isTimeExpired]);
 
   return (
     <View className="flex-1 bg-black px-6">
-      {/* Header with X button */}
       <View className="flex-row justify-end pt-12 pb-4">
         <TouchableOpacity onPress={handleGoHome} className="p-2">
           <XMarkIcon color="#FFFF00" size={24} />
         </TouchableOpacity>
       </View>
 
-      {/* Main Content */}
       <Animated.View 
         className="flex-1 justify-center items-center"
         style={{
@@ -76,29 +75,24 @@ export default function IncorrectAnswerScreen({ selectedAnswer, correctAnswer }:
           }]
         }}
       >
-        {/* Failure Icon */}
         <View className="mb-8">
           <XCircleIcon color="#FF0000" size={80} />
         </View>
 
-        {/* Failure Title */}
         <Text className="text-red-400 text-3xl font-bold text-center mb-4">
           Better Luck Next Time
         </Text>
 
-        {/* Failure Message */}
         <Text className="text-primary text-lg text-center mb-8 leading-6 px-4">
           {getFailureMessage()}
         </Text>
 
-        {/* Answer Details */}
         <View className="bg-gray-800 rounded-xl p-4 mb-8">
           <Text className="text-gray-300 text-center">
             {getAnswerDetails()}
           </Text>
         </View>
 
-        {/* Action Button */}
         <TouchableOpacity
           className="bg-yellow-400 rounded-xl py-4 px-8 items-center justify-center"
           onPress={handleGoHome}

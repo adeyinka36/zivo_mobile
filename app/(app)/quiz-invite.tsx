@@ -11,7 +11,7 @@ export default function QuizInviteScreen() {
   const [showMediaPlayer, setShowMediaPlayer] = useState(false);
   const [showNoQuizWinner, setShowNoQuizWinner] = useState(false);
 
-  // If no quiz data, redirect to home
+
   useEffect(() => {
     if (!quizData) {
       router.replace('/(app)/home');
@@ -35,7 +35,6 @@ export default function QuizInviteScreen() {
     }
   };
 
-  // Show loading while checking quiz data
   if (!quizData) {
     return null;
   }
@@ -44,12 +43,10 @@ export default function QuizInviteScreen() {
     return <NoQuizWinner />;
   }
 
-  // Show media player if user accepted
   if (showMediaPlayer) {
     return <MediaPlayerScreen onCancel={endMediaStartQuiz} muted={false} />;
   }
 
-  // Show invitation screen (always show this first)
   return (
     <QuizInvitationScreen 
       onAccept={handleAccept}

@@ -32,16 +32,14 @@ export default function QuizRoute() {
       console.error('Failed to send quiz result:', error);
     }
     
-    // Navigate to result after a delay
     setTimeout(() => {
-      router.push({
+      router.replace({
         pathname: '/(app)/quiz-result',
         params: { isCorrect: correct.toString() }
       });
     }, 2000);
   };
 
-  // Show loading while checking quiz data
   if (!quizData) {
     return null;
   }

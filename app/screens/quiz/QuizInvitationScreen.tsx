@@ -12,7 +12,6 @@ interface QuizInvitationScreenProps {
 export default function QuizInvitationScreen({ onAccept, onDecline }: QuizInvitationScreenProps) {
   const { quizData } = useQuiz();
 
-  // Validate quiz data structure
   React.useEffect(() => {
     if (!quizData) {
       console.error('QuizInvitationScreen: No quiz data available');
@@ -43,8 +42,8 @@ export default function QuizInvitationScreen({ onAccept, onDecline }: QuizInvita
     );
   }
 
-  const reward = parseInt(quizData.reward.toString()) / 100; // Convert from cents to dollars
-
+  const reward = parseInt(quizData.reward.toString()) / 100; 
+  
   return (
     <View className="flex-1 bg-black px-5 justify-between">
       {/* Header with X button */}
@@ -56,10 +55,6 @@ export default function QuizInvitationScreen({ onAccept, onDecline }: QuizInvita
 
       {/* Main Content */}
       <View className="flex-1 justify-around items-center px-5">
-        {/*/!* Quiz Icon/Emoji *!/*/}
-        {/*<View className="mb-8">*/}
-        {/*  <Text className="text-6xl">🎯</Text>*/}
-        {/*</View>*/}
 
         {/* Title */}
         <Text className="text-yellow-400 text-2xl font-bold text-center mb-4">
