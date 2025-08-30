@@ -32,7 +32,7 @@ export default function NoQuizWinner() {
 
       return () => {
         clearQuiz();
-        router.replace('/(app)/home');
+        router.replace('/(app)/explore');
       }
 }, [quizData]);
 

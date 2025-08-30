@@ -22,6 +22,7 @@ export interface UserMedia {
   thumbnail: string | null;
   uploader_id: string;
   uploader_username: string;
+  view_count: number;
 }
 
 export interface ProfileFormData {

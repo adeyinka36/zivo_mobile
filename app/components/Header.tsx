@@ -28,7 +28,7 @@ export default function Header({ onNotificationPress }: HeaderProps) {
       {/* Logo */}
       <View className="flex-1 items-center justify-center">
         <TouchableOpacity
-          onPress={() => router.push('/home')}
+          onPress={() => router.push('/explore')}
           className="absolute  h-full justify-center"
           activeOpacity={0.7}
         >

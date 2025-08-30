@@ -13,6 +13,7 @@ export class FormStateService {
       description: '',
       tags: [],
       reward: 500,
+      quizNumber: Math.floor(Math.random() * 100) + 1,
       questions: [],
     };
   }
@@ -76,6 +77,10 @@ export class FormStateService {
       errors.push('Reward must be at least $5.00');
     }
 
+    if (state.quizNumber < 1 || state.quizNumber > 100) {
+      errors.push('Quiz number must be between 1 and 100');
+    }
+
     if (state.description.length > 1000) {
       errors.push('Description must not exceed 1000 characters');
     }
@@ -106,6 +111,7 @@ export class FormStateService {
       description: state.description,
       tags: state.tags,
       reward: state.reward,
+      quiz_number: state.quizNumber,
       questions: state.questions.map(quiz => ({
         question: quiz.question,
         answer: String.fromCharCode(65 + quiz.correctAnswer),

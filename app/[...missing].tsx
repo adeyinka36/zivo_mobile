@@ -10,12 +10,12 @@ export default function NotFoundScreen() {
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/(app)/home');
+      router.replace('/(app)/explore');
     }
   };
 
   const handleGoHome = () => {
-    router.replace('/(app)/home');
+    router.replace('/(app)/explore');
   };
 
   return (

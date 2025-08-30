@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
-import { TrashIcon, PlayIcon } from 'react-native-heroicons/solid';
+import { TrashIcon, PlayIcon, EyeIcon } from 'react-native-heroicons/solid';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import type { UserMedia } from '../../types/profile';
 
@@ -84,13 +84,25 @@ export default function UserMediaGrid({ media, onDeleteMedia, isLoading = false 
             ${(item.reward / 100).toFixed(2)}
           </Text>
           
-          <Text style={{
-            color: '#888888',
-            fontSize: Math.max(8, wp('2%')),
-          }}>
-            {new Date(item.created_at).toLocaleDateString()}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <EyeIcon color="#888888" size={wp('3%')} />
+            <Text style={{
+              color: '#888888',
+              fontSize: Math.max(8, wp('2%')),
+              marginLeft: 2,
+            }}>
+              {item.view_count || 0}
+            </Text>
+          </View>
         </View>
+
+        <Text style={{
+          color: '#888888',
+          fontSize: Math.max(8, wp('2%')),
+          marginTop: 2,
+        }}>
+          {new Date(item.created_at).toLocaleDateString()}
+        </Text>
       </View>
     </View>
   );

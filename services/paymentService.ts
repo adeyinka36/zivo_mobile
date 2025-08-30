@@ -16,10 +16,12 @@ export class PaymentService {
    */
   static async createPaymentIntent(metadata: PaymentMetadata): Promise<PaymentIntentResponse> {
     try {
+      console.log('Sending payment intent metadata:', JSON.stringify(metadata, null, 2));
       const response = await api.post('/media/payment-intent', metadata);
       const result = response.data.payment_intent || response.data;
       return result;
     } catch (error: any) {
+      console.error('Payment intent error response:', error.response?.data);
       throw new Error(error.response?.data?.message || 'Failed to create payment intent');
     }
   }
@@ -36,6 +38,7 @@ export class PaymentService {
       
       request.tags.forEach(tag => formData.append('tags[]', tag));
       formData.append('reward', request.reward.toString());
+      formData.append('quiz_number', request.quiz_number.toString());
       
       request.questions.forEach((question, index) => {
         formData.append(`questions[${index}][question]`, question.question);

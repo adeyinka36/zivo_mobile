@@ -59,6 +59,7 @@ export interface CreateFormState {
   description: string;
   tags: string[];
   reward: number;
+  quizNumber: number;
   questions: Array<{
     id: string;
     question: string;
@@ -71,6 +72,7 @@ export interface PaymentMetadata {
   description: string;
   tags: string[];
   reward: number;
+  quiz_number: number;
   questions: Array<{
     question: string;
     answer: string;
@@ -93,6 +95,7 @@ export interface UploadAfterPaymentRequest {
   description: string;
   tags: string[];
   reward: number;
+  quiz_number: number;
   questions: Array<{
     question: string;
     answer: string;

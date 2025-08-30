@@ -7,6 +7,7 @@ import MediaUpload from '@/components/create/MediaUpload';
 import RewardInput from '@/components/create/RewardInput';
 import QuizSection from '@/components/create/QuizSection';
 import TagsInput from '@/components/create/TagsInput';
+import QuizNumberInput from '@/components/create/QuizNumberInput';
 import { PaymentService } from '../../services/paymentService';
 import { FormStateService } from '../../services/formStateService';
 import { CreateFormState } from '../../types/payment';
@@ -26,7 +27,6 @@ export default function CreateScreen() {
     }, [])
   );
 
-  // Auto-save form state when it changes
   useEffect(() => {
     FormStateService.saveFormState(formState);
   }, [formState]);
@@ -96,7 +96,6 @@ export default function CreateScreen() {
   };
 
   const handleMediaSelect = (media: { uri: string; type: 'image' | 'video'; name: string; } | null) => {
-    // Add size property to match CreateFormState interface
     const mediaWithSize = media ? { ...media, size: 0 } : null;
     updateFormState({ media: mediaWithSize });
   };
@@ -111,6 +110,10 @@ export default function CreateScreen() {
 
   const handleRewardChange = (reward: number) => {
     updateFormState({ reward });
+  };
+
+  const handleQuizNumberChange = (quizNumber: number) => {
+    updateFormState({ quizNumber });
   };
 
   const handleQuizzesChange = (questions: CreateFormState['questions']) => {
@@ -129,14 +132,12 @@ export default function CreateScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View className="justify-between min-h-full">
-        {/* Media Upload Section */}
         <MediaUpload
           media={formState.media}
           onMediaSelect={handleMediaSelect}
           className="mb-6"
         />
 
-        {/* Description Input */}
         <View className="mb-6">
           <Text className="text-yellow-400 text-lg font-bold mb-2">Description</Text>
           <TextInput
@@ -154,28 +155,30 @@ export default function CreateScreen() {
           </Text>
         </View>
 
-        {/* Tags Input */}
         <TagsInput
           tags={formState.tags}
           onChange={handleTagsChange}
           className="mb-6"
         />
 
-        {/* Quiz Section */}
+        <QuizNumberInput
+          value={formState.quizNumber}
+          onChange={handleQuizNumberChange}
+          className="mb-6"
+        />
+
         <QuizSection
           quizzes={formState.questions}
           onQuizzesChange={handleQuizzesChange}
           className="mb-6"
         />
 
-        {/* Reward Input */}
         <RewardInput
           value={formState.reward}
           onChange={handleRewardChange}
           className="mb-6"
         />
 
-        {/* Payment Button */}
         <TouchableOpacity
           onPress={handlePayment}
           className="bg-yellow-400 py-4 rounded-lg items-center mb-4"
@@ -186,7 +189,6 @@ export default function CreateScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Clear Form Button */}
         <TouchableOpacity
           onPress={handleClearForm}
           className="bg-gray-600 py-3 rounded-lg items-center mb-3"

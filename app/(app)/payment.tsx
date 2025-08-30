@@ -163,6 +163,7 @@ export default function PaymentScreen() {
         description: formState.description,
         tags: formState.tags,
         reward: formState.reward,
+        quiz_number: formState.quizNumber,
         questions: formState.questions.map((quiz: { id: string; question: string; options: string[]; correctAnswer: number }) => ({
           question: quiz.question,
           answer: String.fromCharCode(65 + quiz.correctAnswer),

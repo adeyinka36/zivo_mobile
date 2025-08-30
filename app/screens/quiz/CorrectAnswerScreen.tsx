@@ -34,9 +34,8 @@ export default function CorrectAnswerScreen({ selectedAnswer, correctAnswer }: C
   const handleGoHome = useCallback(() => {
     if (isNavigating.current) return;
     isNavigating.current = true;
-    
     clearQuiz();
-    router.replace('/(app)/home');
+    router.replace('/(app)/explore');
   }, [clearQuiz, router]);
 
   const getAnswerDetails = useCallback(() => {

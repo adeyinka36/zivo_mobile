@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Continue with login even if push token fails
       }
       
-      router.replace('/(app)/home');
+      router.replace('/(app)/explore');
     } catch (error: any) {
       console.error('Login error details:', {
         message: error.message,
@@ -183,7 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Continue with login even if push token fails
       }
       
-      router.replace('/(app)/home');
+      router.replace('/(app)/explore');
     } catch (error: any) {
       console.error('Signup error:', error);
       if (error.response?.data?.errors) {

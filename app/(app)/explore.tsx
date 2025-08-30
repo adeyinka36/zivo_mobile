@@ -1,16 +1,17 @@
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { View, Text, FlatList, Image, TextInput, ActivityIndicator, Dimensions, TouchableOpacity, Animated, Platform, RefreshControl } from 'react-native';
+import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, RefreshControl, TextInput, Platform, Dimensions, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { MagnifyingGlassIcon, EyeIcon, InformationCircleIcon, CheckCircleIcon } from 'react-native-heroicons/solid';
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { MagnifyingGlassIcon, InformationCircleIcon, EyeIcon, CheckCircleIcon } from 'react-native-heroicons/solid';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/context/auth';
 import MediaInfo from '@/components/MediaInfo';
 import FullScreenMedia from '@/components/FullScreenMedia';
-import { VideoView } from 'expo-video';
-import  useOptimizedVideoPlayer  from '../hooks/useOptimizedVideoPlayer';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth } from '@/hooks/useAuth';
+import EmptyExploreState from '@/components/EmptyExploreState';
+import { VideoView, useVideoPlayer } from 'expo-video';
+import useOptimizedVideoPlayer from '../hooks/useOptimizedVideoPlayer';
 import { useEventListener } from 'expo';
 
 interface Media {
@@ -279,7 +280,6 @@ export default function ExploreScreen() {
                   reward={item.reward}
                   uploader="Unknown"
                   tags={item.tags}
-                  view_count={item.view_count}
                   onClose={closeMediaInfo}
                 />
               </View>
@@ -367,6 +367,8 @@ export default function ExploreScreen() {
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000000' }}>
           <Text style={{ color: 'red', fontSize: Math.max(14, wp('4%')) }}>Error loading media. Please try again.</Text>
         </View>
+      ) : data?.pages.flatMap((page) => page.data).length === 0 ? (
+        <EmptyExploreState />
       ) : (
         <FlatList
           ref={flatListRef}

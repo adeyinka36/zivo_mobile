@@ -7,7 +7,7 @@ import useOptimizedVideoPlayer from '../hooks/useOptimizedVideoPlayer';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/context/auth';
 
-const { width, height } = Dimensions.get('window');
+// const { width, height } = Dimensions.get('window');
 
 interface VideoViewParams {
   mediaId: string;
@@ -22,6 +22,7 @@ interface VideoViewParams {
 export default function VideoViewScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  // @ts-ignore
   const params = useLocalSearchParams<VideoViewParams>();
   
   const [showCompletion, setShowCompletion] = useState(params.hasWatched === 'true');
@@ -36,7 +37,7 @@ export default function VideoViewScreen() {
       duration: 500,
       useNativeDriver: true,
     }).start();
-    handleWatchComplete();
+    handleWatchComplete().then(r => {});
   };
 
   const handleWatchComplete = async () => {

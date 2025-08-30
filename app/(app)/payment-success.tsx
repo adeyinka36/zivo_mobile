@@ -25,11 +25,11 @@ export default function PaymentSuccessScreen() {
       {/* Action Buttons */}
       <View className="w-full space-y-4">
         <TouchableOpacity
-          onPress={() => router.replace('/(app)/home')}
+          onPress={() => router.replace('/(app)/explore')}
           className="bg-yellow-400 py-4 rounded-lg items-center"
           activeOpacity={0.7}
         >
-          <Text className="text-black font-bold text-lg">Go to Home</Text>
+          <Text className="text-black font-bold text-lg">Go to Explore</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

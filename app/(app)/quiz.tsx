@@ -13,7 +13,7 @@ export default function QuizRoute() {
   // If no quiz data, redirect to home
   useEffect(() => {
     if (!quizData) {
-      router.replace('/(app)/home');
+      router.replace('/(app)/explore');
     }
   }, [quizData, router]);
 

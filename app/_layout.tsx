@@ -28,7 +28,7 @@ function RootLayoutNav() {
         router.replace('/(auth)/login');
       }
       else if (isAuthenticated && pathname.startsWith('/(auth)')) {
-        router.replace('/(app)/home');
+        router.replace('/(app)/explore');
       }
     }
   }, [isAuthenticated, isLoading, pathname]);

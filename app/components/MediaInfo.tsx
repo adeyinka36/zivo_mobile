@@ -8,11 +8,10 @@ interface MediaInfoProps {
   reward: number;
   uploader: string;
   tags: Array<{ id: string; name: string }>;
-  view_count: number;
   onClose: () => void;
 }
 
-export default function MediaInfo({ description, reward, uploader, tags, view_count, onClose }: MediaInfoProps) {
+export default function MediaInfo({ description, reward, uploader, tags, onClose }: MediaInfoProps) {
   const rewardInDollars = (reward / 100).toFixed(2);
 
   return (
@@ -40,20 +39,7 @@ export default function MediaInfo({ description, reward, uploader, tags, view_co
 
       {/* Prominent Stats Section */}
       <View className="bg-primary/10 rounded-lg p-4 mb-6 border border-primary/30">
-        <View className="flex-row justify-between items-center">
-          {/* Views */}
-          <View className="flex-1 items-center">
-            <Text className="text-primary font-bold mb-1" style={{ fontSize: wp('4%') }}>
-              👁 {view_count}
-            </Text>
-            <Text className="text-white/80 font-medium" style={{ fontSize: wp('3%') }}>
-              Views
-            </Text>
-          </View>
-
-          {/* Divider */}
-          <View className="w-px h-12 bg-primary/30 mx-4" />
-
+        <View className="items-center">
           {/* Reward */}
           <View className="flex-1 items-center">
             <Text className="text-primary font-bold mb-1" style={{ fontSize: wp('4%') }}>
