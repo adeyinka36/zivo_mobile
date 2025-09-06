@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useStripe, useConfirmPayment, usePaymentSheet } from '@stripe/stripe-react-native';
+import { useStripe, useConfirmPayment, usePaymentSheet, usePlatformPay, PlatformPay } from '@stripe/stripe-react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { PaymentService } from '../../services/paymentService';
 import { FormStateService } from '../../services/formStateService';
@@ -12,6 +12,7 @@ import SuccessModal from '../components/SuccessModal';
 export default function PaymentScreen() {
   const { confirmPayment, loading } = useConfirmPayment();
   const { initPaymentSheet, presentPaymentSheet } = usePaymentSheet();
+  const { confirmPlatformPayPayment, isPlatformPaySupported } = usePlatformPay();
   const { clientSecret, paymentId, amount } = useLocalSearchParams<{
     clientSecret: string;
     paymentId: string;
@@ -62,30 +63,70 @@ export default function PaymentScreen() {
 
     try {
       if (paymentMethod === 'Card') {
-        // For card payments, use the payment sheet
         setShowCardForm(true);
         setIsProcessing(false);
         setSelectedMethod(null);
         return;
       }
 
-      // For Apple Pay and Google Pay
-      const stripePaymentMethodType = paymentMethod === 'ApplePay' ? 'ApplePay' : 'GooglePay';
+      if (paymentMethod === 'GooglePay') {
+        const isSupported = await isPlatformPaySupported({ googlePay: { testEnv: true } });
+        if (!isSupported) {
+          Alert.alert('Google Pay Not Supported', 'Google Pay is not available on this device.');
+          return;
+        }
 
-      const { error, paymentIntent } = await confirmPayment(clientSecret, {
-        paymentMethodType: stripePaymentMethodType as any,
-        paymentMethodData: {
-          billingDetails: {
-            email: user?.email,
-            name: user?.name,
-          },
-        },
-      });
+        const { error, paymentIntent } = await confirmPlatformPayPayment(
+          clientSecret,
+          {
+            googlePay: {
+              testEnv: true,
+              merchantName: 'Zivo',
+              merchantCountryCode: 'US',
+              currencyCode: 'USD',
+              billingAddressConfig: {
+                format: PlatformPay.BillingAddressFormat.Full,
+                isPhoneNumberRequired: false,
+                isRequired: false,
+              },
+            },
+          }
+        );
 
-      if (error) {
-        Alert.alert('Payment Failed', error.message);
-      } else if (paymentIntent) {
-        await handlePaymentSuccess();
+        if (error) {
+          Alert.alert('Payment Failed', error.message);
+        } else if (paymentIntent) {
+          await handlePaymentSuccess();
+        }
+      } else if (paymentMethod === 'ApplePay') {
+        const isSupported = await isPlatformPaySupported({});
+        if (!isSupported) {
+          Alert.alert('Apple Pay Not Supported', 'Apple Pay is not available on this device.');
+          return;
+        }
+
+        const { error, paymentIntent } = await confirmPlatformPayPayment(
+          clientSecret,
+          {
+            applePay: {
+              merchantCountryCode: 'US',
+              currencyCode: 'USD',
+              cartItems: [
+                {
+                  label: 'Zivo',
+                  amount: (parseFloat(amount) / 100).toString(),
+                  paymentType: PlatformPay.PaymentType.Immediate,
+                },
+              ],
+            },
+          }
+        );
+
+        if (error) {
+          Alert.alert('Payment Failed', error.message);
+        } else if (paymentIntent) {
+          await handlePaymentSuccess();
+        }
       }
     } catch (error: any) {
       console.error('Payment error:', error);

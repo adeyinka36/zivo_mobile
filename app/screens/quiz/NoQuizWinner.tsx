@@ -5,13 +5,19 @@ import { CheckCircleIcon } from 'react-native-heroicons/solid';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { api } from '@/context/auth';
 import { useQuiz } from '@/context/QuizContext';
+import { useAudioPlayer }  from "expo-audio";
 
-
+const quizWonSound = require('@/assets/quiz-won.mp3');
 
 export default function NoQuizWinner() {
   const router = useRouter();
   const { quizData, clearQuiz } = useQuiz();
   const rewardInDollars = (Number(quizData?.reward) / 100).toFixed(2);
+  const soundPlayer = useAudioPlayer(quizWonSound);
+
+  useEffect(() => {
+    soundPlayer.play();
+  }, [soundPlayer]);
 
   const handleContinue = () => {
     clearQuiz();

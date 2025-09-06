@@ -3,6 +3,10 @@ import { View, Text, TouchableOpacity, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { XMarkIcon, CheckCircleIcon } from 'react-native-heroicons/solid';
 import { useQuiz } from '@/context/QuizContext';
+import { useAudioPlayer }  from "expo-audio";
+
+const quizWonSound = require('@/assets/quiz-won.mp3');
+
 
 interface CorrectAnswerScreenProps {
   selectedAnswer: number;
@@ -15,6 +19,7 @@ export default function CorrectAnswerScreen({ selectedAnswer, correctAnswer }: C
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const isNavigating = useRef(false);
+  const soundPlayer = useAudioPlayer(quizWonSound);
 
   useEffect(() => {
     Animated.parallel([
@@ -29,6 +34,7 @@ export default function CorrectAnswerScreen({ selectedAnswer, correctAnswer }: C
         useNativeDriver: true,
       }),
     ]).start();
+    soundPlayer.play();
   }, [fadeAnim, slideAnim]);
 
   const handleGoHome = useCallback(() => {

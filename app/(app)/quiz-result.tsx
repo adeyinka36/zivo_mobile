@@ -3,6 +3,7 @@ import { useLocalSearchParams } from 'expo-router';
 import CorrectAnswerScreen from '@/screens/quiz/CorrectAnswerScreen';
 import IncorrectAnswerScreen from '@/screens/quiz/IncorrectAnswerScreen';
 
+
 export default function QuizResultScreen() {
   const params = useLocalSearchParams();
 

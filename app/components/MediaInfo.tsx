@@ -12,18 +12,38 @@ interface MediaInfoProps {
 }
 
 export default function MediaInfo({ description, reward, uploader, tags, onClose }: MediaInfoProps) {
-  const rewardInDollars = (reward / 100).toFixed(2);
+  const safeReward = reward || 0;
+  const rewardInDollars = (safeReward / 100).toFixed(2);
 
   return (
-    <View className="bg-black/95 rounded-xl p-6 border border-primary/50 shadow-2xl">
+    <View style={{ 
+      backgroundColor: '#000000F2', 
+      borderRadius: 12, 
+      padding: 24, 
+      borderWidth: 1, 
+      borderColor: '#FFFF0050' 
+    }}>
       {/* Header with close button */}
-      <View className="flex-row justify-between items-center mb-6">
-        <Text className="text-primary font-bold" style={{ fontSize: wp('5%') }}>
+      <View style={{ 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: 24 
+      }}>
+        <Text style={{ 
+          color: '#FFFF00', 
+          fontWeight: 'bold', 
+          fontSize: wp('5%') 
+        }}>
           Media Details
         </Text>
         <TouchableOpacity 
           onPress={onClose} 
-          className="bg-primary/20 rounded-full p-2"
+          style={{ 
+            backgroundColor: '#FFFF0020', 
+            borderRadius: 999, 
+            padding: 8 
+          }}
           activeOpacity={0.7}
         >
           <XMarkIcon color="#FFFF00" size={24} />
@@ -31,49 +51,103 @@ export default function MediaInfo({ description, reward, uploader, tags, onClose
       </View>
 
       {/* Description */}
-      <View className="mb-6">
-        <Text className="text-white leading-7 font-medium" style={{ fontSize: wp('4.2%') }}>
+      <View style={{ marginBottom: 24 }}>
+        <Text style={{ 
+          color: '#FFFFFF', 
+          lineHeight: 28, 
+          fontWeight: '500', 
+          fontSize: wp('4.2%') 
+        }}>
           {description}
         </Text>
       </View>
 
       {/* Prominent Stats Section */}
-      <View className="bg-primary/10 rounded-lg p-4 mb-6 border border-primary/30">
-        <View className="items-center">
+      <View style={{ 
+        backgroundColor: '#FFFF0030', 
+        borderRadius: 12, 
+        padding: 20, 
+        marginBottom: 24, 
+        borderWidth: 2, 
+        borderColor: '#FFFF00',
+        minHeight: 80,
+        justifyContent: 'center'
+      }}>
+        <View style={{ alignItems: 'center' }}>
           {/* Reward */}
-          <View className="flex-1 items-center">
-            <Text className="text-primary font-bold mb-1" style={{ fontSize: wp('4%') }}>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ 
+              color: '#FFFF00', 
+              fontWeight: 'bold', 
+              marginBottom: 8, 
+              fontSize: wp('5%'),
+              textAlign: 'center'
+            }}>
               ${rewardInDollars}
             </Text>
-            <Text className="text-white/80 font-medium" style={{ fontSize: wp('3%') }}>
-              Reward
+            <Text style={{ 
+              color: '#FFFFFF', 
+              fontWeight: '600', 
+              fontSize: wp('3.5%'),
+              textAlign: 'center'
+            }}>
+              AWS Voucher Reward
             </Text>
           </View>
         </View>
       </View>
 
       {/* Uploader Info */}
-      <View className="mb-6">
-        <Text className="text-primary font-semibold mb-2" style={{ fontSize: wp('3.5%') }}>
+      <View style={{ marginBottom: 24 }}>
+        <Text style={{ 
+          color: '#FFFF00', 
+          fontWeight: '600', 
+          marginBottom: 8, 
+          fontSize: wp('3.5%') 
+        }}>
           Uploaded by
         </Text>
-        <Text className="text-white font-medium" style={{ fontSize: wp('4%') }}>
+        <Text style={{ 
+          color: '#FFFFFF', 
+          fontWeight: '500', 
+          fontSize: wp('4%') 
+        }}>
           {uploader}
         </Text>
       </View>
 
       {/* Tags */}
       <View>
-        <Text className="text-primary font-semibold mb-3" style={{ fontSize: wp('3.5%') }}>
+        <Text style={{ 
+          color: '#FFFF00', 
+          fontWeight: '600', 
+          marginBottom: 12, 
+          fontSize: wp('3.5%') 
+        }}>
           Tags
         </Text>
-        <View className="flex-row flex-wrap gap-2">
+        <View style={{ 
+          flexDirection: 'row', 
+          flexWrap: 'wrap', 
+          gap: 8 
+        }}>
           {tags.map((tag) => (
             <View 
               key={tag.id} 
-              className="bg-primary/20 border border-primary/50 rounded-full px-4 py-2"
+              style={{ 
+                backgroundColor: '#FFFF0020', 
+                borderWidth: 1, 
+                borderColor: '#FFFF0050', 
+                borderRadius: 999, 
+                paddingHorizontal: 16, 
+                paddingVertical: 8 
+              }}
             >
-              <Text className="text-primary font-medium" style={{ fontSize: wp('3.5%') }}>
+              <Text style={{ 
+                color: '#FFFF00', 
+                fontWeight: '500', 
+                fontSize: wp('3.5%') 
+              }}>
                 #{tag.name}
               </Text>
             </View>

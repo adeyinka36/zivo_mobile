@@ -3,6 +3,10 @@ import { View, Text, TouchableOpacity, Animated } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { XMarkIcon, XCircleIcon } from 'react-native-heroicons/solid';
 import { useQuiz } from '@/context/QuizContext';
+import { useAudioPlayer }  from "expo-audio";
+
+const quizLossSound = require('@/assets/quiz-loss.mp3');
+
 
 interface IncorrectAnswerScreenProps {
   selectedAnswer: number;
@@ -16,6 +20,7 @@ export default function IncorrectAnswerScreen({ selectedAnswer, correctAnswer }:
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const isNavigating = useRef(false);
+  const soundPlayer = useAudioPlayer(quizLossSound);
 
   const isTimeExpired = params.isTimeExpired === 'true';
 
@@ -32,6 +37,7 @@ export default function IncorrectAnswerScreen({ selectedAnswer, correctAnswer }:
         useNativeDriver: true,
       }),
     ]).start();
+    soundPlayer.play();
   }, [fadeAnim, slideAnim]);
 
   const handleGoHome = useCallback(() => {

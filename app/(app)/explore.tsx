@@ -319,13 +319,13 @@ export default function ExploreScreen() {
   }, [visibleIndex, selectedMedia, handleEyePress, handleInfoPress, closeMediaInfo, getResponsiveHeights]);
 
   const renderFooter = useCallback(() => {
-    if (!isFetchingNextPage) return null;
+    if (!isFetchingNextPage || !hasNextPage) return null;
     return (
       <View style={{ paddingVertical: 16 }}>
         <ActivityIndicator color="#FFFF00" size="large" />
       </View>
     );
-  }, [isFetchingNextPage]);
+  }, [isFetchingNextPage, hasNextPage]);
 
   const handleViewableItemsChanged = useCallback(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {
@@ -333,6 +333,25 @@ export default function ExploreScreen() {
       setVisibleIndex(newVisibleIndex);
     }
   }, []);
+
+  const handleScroll = useCallback((event: any) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const allMedia = data?.pages?.flatMap((page) => page?.data || []) || [];
+    const lastItemIndex = allMedia.length - 1;
+    const heights = getResponsiveHeights();
+    const totalItemHeight = heights.availableHeight + heights.infoSectionHeight;
+    
+    // Calculate the maximum scroll position (last item should be at the top)
+    const maxScrollY = totalItemHeight * lastItemIndex;
+    
+    // If we're trying to scroll beyond the last item, prevent it
+    if (contentOffset.y > maxScrollY) {
+      flatListRef.current?.scrollToOffset({
+        offset: maxScrollY,
+        animated: false
+      });
+    }
+  }, [data, getResponsiveHeights]);
 
   const viewabilityConfig = useMemo(() => ({
     itemVisiblePercentThreshold: 50,
@@ -384,17 +403,20 @@ export default function ExploreScreen() {
           decelerationRate={Platform.OS === 'ios' ? 0.998 : 0.9}
           pagingEnabled={false}
           onViewableItemsChanged={handleViewableItemsChanged}
+          onScroll={handleScroll}
           viewabilityConfig={viewabilityConfig}
           removeClippedSubviews={false}
           maxToRenderPerBatch={1}
           initialNumToRender={1}
+          overScrollMode="never"
+          scrollEventThrottle={16}
           style={{ backgroundColor: '#000000' }}
           getItemLayout={(data, index) => ({
             length: totalItemHeight,
             offset: totalItemHeight * index,
             index,
           })}
-          contentContainerStyle={{ paddingBottom: heights.bottomInset, backgroundColor: '#000000' }}
+          contentContainerStyle={{ backgroundColor: '#000000' }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}

@@ -21,6 +21,14 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.adegiwa.zivo.app',
+      "entitlements": {
+        "com.apple.developer.applesignin": [
+          "Default"
+        ],
+        "com.apple.developer.in-app-payments": [
+          "merchant.com.zivo.app"
+        ]
+      },
       backgroundColor: '#000000',
       infoPlist: {
         NSAppTransportSecurity: {
@@ -73,9 +81,15 @@ export default {
       [
         'expo-notifications',
         {
-          icon: './assets/images/icon.png',
-          color: '#ffffff',
+          icon: './assets/logo.png',
+          color: '#FFFF00',
           sounds: ['./assets/sounds/notification.wav']
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone",
         }
       ]
     ],
