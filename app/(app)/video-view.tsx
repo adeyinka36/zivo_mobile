@@ -6,6 +6,7 @@ import { VideoView } from 'expo-video';
 import useOptimizedVideoPlayer from '../hooks/useOptimizedVideoPlayer';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/context/auth';
+import { useQuiz } from '@/context/QuizContext';
 
 // const { width, height } = Dimensions.get('window');
 
@@ -22,6 +23,7 @@ interface VideoViewParams {
 export default function VideoViewScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { setQuizData } = useQuiz();
   // @ts-ignore
   const params = useLocalSearchParams<VideoViewParams>();
   
@@ -44,7 +46,12 @@ export default function VideoViewScreen() {
     if (!user || params.hasWatched === 'true') return;
     
     try {
-      await api.post(`/media-watched/${params.mediaId}/${user.id}`);
+      const response = await api.post(`/media-watched/${params.mediaId}/${user.id}`);
+      
+      if (response.data.trigger_quiz && response.data.quiz_data) {
+        setQuizData(response.data.quiz_data);
+        router.replace('/(app)/quiz-invite');
+      }
     } catch (error) {
       console.error('Failed to record watch status:', error);
     }

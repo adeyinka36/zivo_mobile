@@ -7,6 +7,7 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/context/auth';
+import { useQuiz } from '@/context/QuizContext';
 import MediaInfo from '@/components/MediaInfo';
 import FullScreenMedia from '@/components/FullScreenMedia';
 import EmptyExploreState from '@/components/EmptyExploreState';
@@ -47,6 +48,7 @@ const fetchMedia = async ({ pageParam = 1, searchQuery = '' }) => {
 export default function ExploreScreen() {
   const router = useRouter();
   const { user, setUser } = useAuth();
+  const { setQuizData } = useQuiz();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedMedia, setSelectedMedia] = useState<Media | null>(null);
@@ -181,7 +183,12 @@ export default function ExploreScreen() {
     });
     
     try {
-     await api.post(`/media-watched/${fullScreenMedia.id}/${user.id}`)
+      const response = await api.post(`/media-watched/${fullScreenMedia.id}/${user.id}`);
+      
+      if (response.data.trigger_quiz && response.data.quiz_data) {
+        setQuizData(response.data.quiz_data);
+        router.replace('/(app)/quiz-invite');
+      }
     } catch (error) {
       console.error('Failed to record watch status:', error);
       queryClient.setQueryData(['media', debouncedSearch], previousData);

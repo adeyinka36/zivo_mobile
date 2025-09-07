@@ -9,8 +9,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Header from '@/components/Header';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import Constants from 'expo-constants';
-import NotificationManager from "@/components/NotificationManager";
-import {NotificationProvider} from "@/context/NotificationContext";
 import * as Linking from 'expo-linking';
 import { QuizProvider } from '@/context/QuizContext';
 
@@ -99,12 +97,7 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <AuthProvider>
           <QuizProvider>
-            <NotificationProvider>
-              
               <RootLayoutNav />
-              <NotificationManager />
-           
-            </NotificationProvider>
             </QuizProvider>
           </AuthProvider>
         </SafeAreaProvider>

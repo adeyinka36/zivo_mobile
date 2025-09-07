@@ -4,7 +4,6 @@ import { router } from 'expo-router';
 import { User, AuthContextType } from '../../types/auth';
 import { BASE_URL } from '@/utils/getUrls';
 import axios from 'axios';
-import { getPushToken } from '@/components/NotificationManager';
 
 // Create axios instance with default config
 export const api = axios.create({
@@ -98,14 +97,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await SecureStore.setItemAsync('userToken', token);
       setUser(data.user);
       
-      // Try to get push token, but don't fail if it doesn't work
-      try {
-        await getPushToken(data.user.id);
-      } catch (error) {
-        console.log('Push token registration failed:', error);
-        // Continue with login even if push token fails
-      }
-      
       router.replace('/(app)/explore');
     } catch (error: any) {
       console.error('Login error details:', {
@@ -174,14 +165,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = String(data.token);
       await SecureStore.setItemAsync('userToken', token);
       setUser(data.user);
-      
-      // Try to get push token, but don't fail if it doesn't work
-      try {
-        await getPushToken(data.user.id);
-      } catch (error) {
-        console.log('Push token registration failed:', error);
-        // Continue with login even if push token fails
-      }
       
       router.replace('/(app)/explore');
     } catch (error: any) {

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "733017441544",
+    "project_id": "zivo-app-35273",
+    "storage_bucket": "zivo-app-35273.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:733017441544:android:28527979da9c9efbe398bd",
+        "android_client_info": {
+          "package_name": "com.zivo.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnk6XYXCviN6DB0UFYhbL0l9nKEZrZdRQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

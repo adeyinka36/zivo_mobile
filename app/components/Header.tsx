@@ -5,11 +5,7 @@ import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'expo-router';
 
-interface HeaderProps {
-  onNotificationPress?: () => void;
-}
-
-export default function Header({ onNotificationPress }: HeaderProps) {
+export default function Header() {
   const { user } = useAuth();
 
   const router = useRouter();
