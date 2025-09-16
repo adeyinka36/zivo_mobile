@@ -37,12 +37,11 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
-    
-    // Only handle 401 errors for non-login requests
+
     if (error.response?.status === 401 && !error.config.url.includes('/login')) {
-      // Clear token and user data on authentication error
+
       await SecureStore.deleteItemAsync('userToken');
-      // Redirect to login
+
       router.replace('/(auth)/login');
     }
     return Promise.reject(error);
@@ -84,7 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      
       let{ data } = await api.post('/login', { email, password });
 
       data = data.data;

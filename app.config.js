@@ -102,6 +102,7 @@ export default {
       router: {
         origin: false
       }
-    }
+    },
+      userInterfaceStyle: "automatic"
   }
 };

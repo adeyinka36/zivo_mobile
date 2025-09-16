@@ -48,15 +48,20 @@ const  useOptimizedVideoPlayer = ({
 
   useEffect(() => {
     return () => {
-
+      // Clean up player when component unmounts or URL changes
       if (playerRef.current) {
         try {
+          // Properly release the player
+          if (typeof playerRef.current.release === 'function') {
+            playerRef.current.release();
+          }
           playerRef.current = null;
         } catch (error) {
+          console.warn('Error releasing video player:', error);
         }
       }
     };
-  }, []);
+  }, [url]); // Add url dependency to clean up when URL changes
 
   return {
     player,

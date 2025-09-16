@@ -5,7 +5,7 @@ const getBaseUrl = (): string => {
 
     
     // TEMPORARY: Force the correct URL since config reading isn't working
-    const forcedUrl = 'http://192.168.1.159/api/v1';
+    const forcedUrl = 'http://172.20.10.8/api/v1';
   
     return forcedUrl;
     
@@ -22,6 +22,7 @@ const getBaseUrl = (): string => {
         ? 'http://10.0.2.2/api/v1'
         : 'http://localhost/api/v1';
 };
+console.log(getBaseUrl())
 
 export const BASE_URL = getBaseUrl();
 

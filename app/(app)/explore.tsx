@@ -1,19 +1,16 @@
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, RefreshControl, TextInput, Platform, Dimensions, Image } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, RefreshControl, TextInput, Platform, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { MagnifyingGlassIcon, InformationCircleIcon, EyeIcon, CheckCircleIcon } from 'react-native-heroicons/solid';
+import { MagnifyingGlassIcon } from 'react-native-heroicons/solid';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/context/auth';
 import { useQuiz } from '@/context/QuizContext';
-import MediaInfo from '@/components/MediaInfo';
 import FullScreenMedia from '@/components/FullScreenMedia';
 import EmptyExploreState from '@/components/EmptyExploreState';
-import { VideoView, useVideoPlayer } from 'expo-video';
-import useOptimizedVideoPlayer from '../hooks/useOptimizedVideoPlayer';
-import { useEventListener } from 'expo';
+import MediaItem from '@/components/MediaItem';
 
 interface Media {
   id: string;
@@ -55,7 +52,6 @@ export default function ExploreScreen() {
   const [fullScreenMedia, setFullScreenMedia] = useState<Media | null>(null);
   const [visibleIndex, setVisibleIndex] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
@@ -108,22 +104,7 @@ export default function ExploreScreen() {
     initialPageParam: 1,
   });
 
-  useEffect(() => {
-    const allMedia = data?.pages?.flatMap((page) => page?.data || []) || [];
-    const currentMedia = allMedia[visibleIndex];
-    if (currentMedia?.media_type === 'video' && visibleIndex >= 0) {
-      setCurrentVideoUrl(currentMedia.url);
-    } else {
-      setCurrentVideoUrl(null);
-    }
-  }, [visibleIndex, data]);
-
-  const { player } = useOptimizedVideoPlayer({
-    url: currentVideoUrl || '',
-    shouldPlay: !!currentVideoUrl,
-    loop: true,
-    muted: true,
-  });
+  // Remove shared video player - each video item now has its own player
 
   const handleLoadMore = () => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -195,133 +176,23 @@ export default function ExploreScreen() {
     }
   };
 
-  const truncateDescription = (description: string) => {
-    if (description.length <= 25) return description;
-    return description.substring(0, 25) + '...';
-  };
 
-  const VideoPlayer = useCallback(({ media, index }: { media: Media; index: number }) => {
-    const isVisible = visibleIndex === index;
-    const isVideo = media.media_type === 'video';
 
-    if (!isVideo) {
-      return (
-        <Image
-          source={{ uri: media.thumbnail || media.url }}
-          style={{ width: '100%', height: '100%' }}
-          resizeMode="cover"
-        />
-      );
-    }
-
-    if (!isVisible) {
-      return (
-        <Image
-          source={{ uri: media.thumbnail || media.url }}
-          style={{ width: '100%', height: '100%' }}
-          resizeMode="cover"
-        />
-      );
-    }
-
-    return (
-      <VideoView
-        style={{ width: '100%', height: '100%' }}
-        player={player}
-        contentFit="cover"
-        nativeControls={false}
-      />
-    );
-  }, [visibleIndex, player]);
-
-  const MediaPlayer = useCallback(({ media, index }: { media: Media; index: number }) => {
-    if (media.media_type === 'video') {
-      return <VideoPlayer media={media} index={index} />;
-    }
-    return (
-      <Image
-        source={{ uri: media.thumbnail || media.url }}
-        style={{ width: '100%', height: '100%' }}
-        resizeMode="cover"
-      />
-    );
-  }, [VideoPlayer]);
 
   const renderMediaItem = useCallback(({ item, index }: { item: Media; index: number }) => {
     const heights = getResponsiveHeights();
-    const totalItemHeight = heights.availableHeight + heights.infoSectionHeight;
-
+    
     return (
-      <View style={{ height: totalItemHeight }}>
-        <View style={{ height: heights.availableHeight }}>
-          <MediaPlayer media={item} index={index} />
-
-          {/* Permanent dark overlay for better button visibility */}
-          <View style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: '#00000070'
-          }} />
-
-          <TouchableOpacity onPress={() => handleEyePress(item)} style={{ position: 'absolute', top: '45%', left: '45%', zIndex: 10 }}>
-            <EyeIcon color="#FFFF00" size={Math.max(24, wp('8%'))} />
-          </TouchableOpacity>
-          {item.has_watched && (
-            <View style={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}>
-              <CheckCircleIcon color="#00FF00" size={Math.max(16, wp('10%'))} />
-            </View>
-          )}
-
-
-            <View style={{ position: 'absolute', top: 16, left: 16, zIndex: 10 }}>
-              <Text style={{ color: '#FFFF00', fontSize: Math.max(12, wp('3%')), fontWeight: 'bold' }}>Uploader: {item.uploader_username}   </Text>
-            </View>
-          {selectedMedia?.id === item.id && (
-            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#000000F5', justifyContent: 'center', alignItems: 'center', zIndex: 20 }}>
-              <View style={{ width: '98%', padding: 20 }}>
-                <MediaInfo
-                  description={item.description}
-                  reward={item.reward}
-                  uploader="Unknown"
-                  tags={item.tags}
-                  onClose={closeMediaInfo}
-                />
-              </View>
-            </View>
-          )}
-        </View>
-        <View style={{ height: heights.infoSectionHeight, padding: 16, backgroundColor: '#000', borderTopColor: '#333', borderTopWidth: 1 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View style={{ flex: 1, marginRight: 12 }}>
-              <Text style={{ color: '#FFFF00', fontSize: Math.max(14, wp('3.5%')), marginBottom: 8 }} numberOfLines={2}>
-                {truncateDescription(item.description)}
-              </Text>
-
-              {item.tags && item.tags.length > 0 && (
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 }}>
-                  {item.tags.slice(0, 3).map(tag => (
-                    <View key={tag.id} style={{ backgroundColor: '#FFFF00', borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, marginRight: 8, marginBottom: 4 }}>
-                      <Text style={{ color: '#000', fontWeight: '600', fontSize: Math.max(10, wp('2.5%')) }}>#{tag.name}</Text>
-                    </View>
-                  ))}
-                  {item.tags.length > 3 && (
-                    <Text style={{ color: '#AAA', fontSize: Math.max(10, wp('2.5%')), alignSelf: 'center', marginLeft: 4 }}>
-                      +{item.tags.length - 3} more
-                    </Text>
-                  )}
-                </View>
-              )}
-            </View>
-
-            <TouchableOpacity onPress={() => handleInfoPress(item)} style={{ padding: 10, backgroundColor: '#FFFF00', borderRadius: 999 }}>
-              <InformationCircleIcon color="#000" size={Math.max(18, wp('5%'))} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <MediaItem
+        item={item}
+        index={index}
+        visibleIndex={visibleIndex}
+        selectedMedia={selectedMedia}
+        heights={heights}
+        onEyePress={handleEyePress}
+        onInfoPress={handleInfoPress}
+        onCloseMediaInfo={closeMediaInfo}
+      />
     );
   }, [visibleIndex, selectedMedia, handleEyePress, handleInfoPress, closeMediaInfo, getResponsiveHeights]);
 
@@ -412,9 +283,10 @@ export default function ExploreScreen() {
           onViewableItemsChanged={handleViewableItemsChanged}
           onScroll={handleScroll}
           viewabilityConfig={viewabilityConfig}
-          removeClippedSubviews={false}
-          maxToRenderPerBatch={1}
-          initialNumToRender={1}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={2}
+          initialNumToRender={2}
+          windowSize={3}
           overScrollMode="never"
           scrollEventThrottle={16}
           style={{ backgroundColor: '#000000' }}

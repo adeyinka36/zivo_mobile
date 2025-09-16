@@ -10,7 +10,7 @@ import { ArrowLeftIcon } from 'react-native-heroicons/solid';
 import SuccessModal from '../components/SuccessModal';
 
 export default function PaymentScreen() {
-  const { confirmPayment, loading } = useConfirmPayment();
+  const { loading } = useConfirmPayment();
   const { initPaymentSheet, presentPaymentSheet } = usePaymentSheet();
   const { confirmPlatformPayPayment, isPlatformPaySupported } = usePlatformPay();
   const { clientSecret, paymentId, amount } = useLocalSearchParams<{
@@ -20,11 +20,11 @@ export default function PaymentScreen() {
   }>();
   const router = useRouter();
   const { user } = useAuth();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
-  const [showCardForm, setShowCardForm] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [ isProcessing, setIsProcessing ] = useState(false);
+  const [ selectedMethod, setSelectedMethod ] = useState<PaymentMethod | null>(null);
+  const [ showCardForm, setShowCardForm ] = useState(false);
+  const [ isUploading, setIsUploading ] = useState(false);
+  const [ showSuccessModal, setShowSuccessModal ] = useState(false);
 
   // Initialize payment sheet for card payments
   useEffect(() => {
@@ -152,7 +152,6 @@ export default function PaymentScreen() {
         console.error('Payment sheet error:', error);
         Alert.alert('Payment Failed', error.message);
       } else {
-        // Payment was successful
         await handlePaymentSuccess();
       }
     } catch (error: any) {
